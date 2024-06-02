@@ -5,3 +5,4 @@ local.env
 prod.env
 yarn.lock
 uploads
+package-lock.json
