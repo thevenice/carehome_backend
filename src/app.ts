@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import express, { Application } from 'express'
-
+import adminRoutes from './routes/adminRoutes'
+import authRoutes from './routes/authRoutes'
 import cors from 'cors'
 import bodyParser from 'body-parser'
 
@@ -29,3 +30,5 @@ app.get('/api', async (req: any, res: any) => {
     res.send({ error: error })
   }
 })
+app.use('/api/admin', adminRoutes);
+app.use('/api/auth', authRoutes);
