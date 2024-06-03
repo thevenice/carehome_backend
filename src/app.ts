@@ -4,8 +4,12 @@ import adminRoutes from './routes/adminRoutes'
 import authRoutes from './routes/authRoutes'
 import cors from 'cors'
 import bodyParser from 'body-parser'
+import dotenv from 'dotenv';
 
+// Load environment variables from .env file
+dotenv.config();
 export const app: Application = express()
+
 app.use(express.json({ limit: '10kb' }))
 app.use(express.urlencoded({ extended: true }))
 const port = process.env.PORT || 9000

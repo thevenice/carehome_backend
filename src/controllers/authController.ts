@@ -4,6 +4,7 @@ import User, { IUser } from '../models/UserModel';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { generateOTP, sendOTP } from '../utils/helper';
+import { AuthenticatedRequest } from '../types/types'; // Import the custom type
 
 // Signup
 export const signup = async (req: Request, res: Response) => {
@@ -116,20 +117,7 @@ export const login = async (req: Request, res: Response) => {
       { expiresIn: '7d' },
     );
 
-    let token: string;
-
-    if (existingUser.role === 'ADMINISTRATOR') {
-      token = jwt.sign(
-        {
-          id: existingUser._id,
-          email: existingUser.email,
-          role: 'ADMINISTRATOR',
-        },
-        process.env.JWT_TOKEN_SECRET as string,
-        { expiresIn: '8h' },
-      );
-    } else {
-      token = jwt.sign(
+    let token: string= jwt.sign(
         {
           id: existingUser._id,
           email: existingUser.email,
@@ -138,14 +126,15 @@ export const login = async (req: Request, res: Response) => {
         process.env.JWT_TOKEN_SECRET as string,
         { expiresIn: '8h' },
       );
-    }
+    
 
     return res.status(200).json({
       success: true,
       message: 'Login successful',
       token,
       refresh_token: refreshToken,
-      user_id: existingUser._id
+      user_id: existingUser._id,
+      role: existingUser.role,
     });
   } catch (error) {
     console.error(error);
@@ -247,7 +236,7 @@ export const resetPasswordRequest = async (req: Request, res: Response) => {
     }
 
     // Generate reset token (this should be a more secure token in a real application)
-    const resetToken = jwt.sign({ email }, 'your_jwt_secret', { expiresIn: '1h' });
+    const resetToken = jwt.sign({ email }, `${process.env.JWT_SECRET}`, { expiresIn: '1h' });
 
     // Here you should send the resetToken to the user's email
     // For simplicity, we'll just return it in the response
@@ -259,20 +248,18 @@ export const resetPasswordRequest = async (req: Request, res: Response) => {
 
 // Reset Password
 export const resetPassword = async (req: Request, res: Response) => {
-  const { token, newPassword } = req.body;
-
+  const { newPassword } = req.body;
   try {
-    const decoded: any = jwt.verify(token, 'your_jwt_secret');
-    const user = await User.findOne({ email: decoded.email });
+    const user = await User.findById((req as AuthenticatedRequest).user.id) as IUser | null;
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     user.password = newPassword;
     await user.save();
-    res.status(200).json({ message: 'Password reset successfully' });
+    return res.status(200).json({ message: 'Password reset successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Error resetting password', error });
+    return res.status(500).json({ message: 'Error resetting password', error });
   }
 };
 
