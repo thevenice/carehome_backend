@@ -24,7 +24,7 @@ export interface IUser extends Document {
 const userSchema = new Schema(
   {
     password: { type: String, required: true },
-    email: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
     active: { type: Boolean, default: true },
     fcm_token: { type: String, required: false },
     otp: { type: Number, required: false, default: undefined },
