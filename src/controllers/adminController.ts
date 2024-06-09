@@ -111,15 +111,32 @@ export const createOrUpdateCompanyInfo = async (req: Request, res: Response): Pr
 
   try {
     const existingCompanyInfo = await CompanyInfo.findOne();
+
     if (existingCompanyInfo) {
-      const updatedCompanyInfo = await CompanyInfo.findByIdAndUpdate(
-        existingCompanyInfo._id,
-        req.body,
-        { new: true }
-      );
-      return res.status(200).json({ success: true, data: updatedCompanyInfo });
+      // Update only the fields that are present in the request body
+      if (req.body.name) existingCompanyInfo.name = req.body.name;
+      if (req.body.contactInfo) existingCompanyInfo.contactInfo = req.body.contactInfo;
+      if (req.body.location) existingCompanyInfo.location = req.body.location;
+      if (req.body.images) existingCompanyInfo.images = req.body.images;
+      if (req.body.aboutUs) existingCompanyInfo.aboutUs = req.body.aboutUs;
+      if (req.body.servicesOffered) existingCompanyInfo.servicesOffered = req.body.servicesOffered;
+      if (req.body.facilitiesAmenities) existingCompanyInfo.facilitiesAmenities = req.body.facilitiesAmenities;
+      if (req.body.testimonials) existingCompanyInfo.testimonials = req.body.testimonials;
+      if (req.body.linkedin) existingCompanyInfo.linkedin = req.body.linkedin;
+      if (req.body.google_map) existingCompanyInfo.google_map = req.body.google_map;
+      if (req.body.x_com) existingCompanyInfo.x_com = req.body.x_com;
+      if (req.body.instagram) existingCompanyInfo.instagram = req.body.instagram;
+      if (req.body.facebook) existingCompanyInfo.facebook = req.body.facebook;
+      if (req.body.whatsapp) existingCompanyInfo.whatsapp = req.body.whatsapp;
+      if (req.body.telegram) existingCompanyInfo.telegram = req.body.telegram;
+      if (req.file) existingCompanyInfo.logo = req.file.path; //logo upload through multer
+
+      await existingCompanyInfo.save();
+      return res.status(200).json({ success: true, data: existingCompanyInfo });
     } else {
       const newCompanyInfo = new CompanyInfo(req.body);
+      if (req.file) newCompanyInfo.logo = req.file.path; //logo upload through multer
+
       await newCompanyInfo.save();
       return res.status(201).json({ success: true, data: newCompanyInfo });
     }

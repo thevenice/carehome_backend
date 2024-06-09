@@ -13,10 +13,18 @@ export interface ICompanyInfo extends Document {
       coordinates: [number]; // Array of longitude & latitude
     };
   };
+  logo?: string;
+  linkedin?: string;
+  google_map?: string;
+  x_com?: string;
+  instagram?: string;
+  facebook?: string;
+  whatsapp?: string;
+  telegram?: string;
   images: string[]; // Array of image URLs stored elsewhere
   aboutUs?: string; // Optional description
   servicesOffered?: string[]; // Optional list of services
-  facilitiesAmenities?: string; // Optional facilities & amenities description
+  facilitiesAmenities?: string[]; // Optional list of facilities & amenities description
   testimonials?: string[]; // Optional testimonials
   createdAt: Date;
   updatedAt: Date;
@@ -54,6 +62,38 @@ const companyInfoSchema = new Schema(
         },
       },
     },
+    logo: {
+      type: String,
+      required: false,
+    },
+    linkedin: {
+      type: String,
+      required: false,
+    },
+    google_map: {
+      type: String,
+      required: false,
+    },
+    x_com: {
+      type: String,
+      required: false,
+    },
+    instagram: {
+      type: String,
+      required: false,
+    },
+    facebook: {
+      type: String,
+      required: false,
+    },
+    whatsapp: {
+      type: String,
+      required: false,
+    },
+    telegram: {
+      type: String,
+      required: false,
+    },
     images: {
       type: [String],
     },
@@ -64,7 +104,7 @@ const companyInfoSchema = new Schema(
       type: [String],
     },
     facilitiesAmenities: {
-      type: String,
+      type: [String],
     },
     testimonials: {
       type: [String],
