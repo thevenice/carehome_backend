@@ -15,4 +15,10 @@ router.post('/user', authenticateJWT(['ADMINISTRATOR']), adminController.createU
 // Update User
 router.put('/user/:id', authenticateJWT(['ADMINISTRATOR']), adminController.updateUser);
 
+// Update or Post Company Info
+router.post('/company-info', adminController.createOrUpdateCompanyInfo);
+
+// Get Company Info
+router.get('/company-info', adminController.getCompanyInfo);
+
 export default router;

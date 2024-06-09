@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import User, { IUser } from '../models/UserModel';
-import { createUserSchema, updateUserSchema } from '../utils/adminValidations';
+import { companyInfoSchema, createUserSchema, updateUserSchema } from '../utils/adminValidations';
+import CompanyInfo from '../models/CompanyInfoModel';
 
 export const createDummyAdmin = async (req: Request, res: Response) => {
   try {
@@ -99,5 +100,42 @@ export const updateUser = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Email already exists' });
     }
     res.status(500).json({ success: false, message: 'Error updating user', error });
+  }
+};
+
+export const createOrUpdateCompanyInfo = async (req: Request, res: Response): Promise<Response> => {
+  const { error } = companyInfoSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ success: false, message: error.details[0].message });
+  }
+
+  try {
+    const existingCompanyInfo = await CompanyInfo.findOne();
+    if (existingCompanyInfo) {
+      const updatedCompanyInfo = await CompanyInfo.findByIdAndUpdate(
+        existingCompanyInfo._id,
+        req.body,
+        { new: true }
+      );
+      return res.status(200).json({ success: true, data: updatedCompanyInfo });
+    } else {
+      const newCompanyInfo = new CompanyInfo(req.body);
+      await newCompanyInfo.save();
+      return res.status(201).json({ success: true, data: newCompanyInfo });
+    }
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Error saving company info', error });
+  }
+};
+
+export const getCompanyInfo = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const companyInfo = await CompanyInfo.findOne();
+    if (!companyInfo) {
+      return res.status(404).json({ success: false, message: 'Company info not found' });
+    }
+    return res.status(200).json({ success: true, data: companyInfo });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Error retrieving company info', error });
   }
 };
