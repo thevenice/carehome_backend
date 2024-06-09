@@ -115,16 +115,28 @@ export const createOrUpdateCompanyInfo = async (req: Request, res: Response): Pr
     if (existingCompanyInfo) {
       // Update only the fields that are present in the request body
       if (req.body.name) existingCompanyInfo.name = req.body.name;
-      if (req.body.contactInfo) existingCompanyInfo.contactInfo = req.body.contactInfo;
+      if (req.body.contactInfo) {
+        const contactInfoJson = JSON.parse(req.body.contactInfo)
+        existingCompanyInfo.contactInfo = contactInfoJson;
+      }
+      if (req.body.servicesOffered) {
+        const servicesOfferedJson = JSON.parse(req.body.servicesOffered)
+        existingCompanyInfo.servicesOffered = servicesOfferedJson;
+        
+      }
+      if (req.body.facilitiesAmenities) {
+        const facilitiesAmenitiesJson = JSON.parse(req.body.facilitiesAmenities)
+        existingCompanyInfo.facilitiesAmenities = facilitiesAmenitiesJson;
+
+      }
+
       if (req.body.location) existingCompanyInfo.location = req.body.location;
       if (req.body.images) existingCompanyInfo.images = req.body.images;
       if (req.body.aboutUs) existingCompanyInfo.aboutUs = req.body.aboutUs;
-      if (req.body.servicesOffered) existingCompanyInfo.servicesOffered = req.body.servicesOffered;
-      if (req.body.facilitiesAmenities) existingCompanyInfo.facilitiesAmenities = req.body.facilitiesAmenities;
       if (req.body.testimonials) existingCompanyInfo.testimonials = req.body.testimonials;
       if (req.body.linkedin) existingCompanyInfo.linkedin = req.body.linkedin;
-      if (req.body.google_map) existingCompanyInfo.google_map = req.body.google_map;
-      if (req.body.x_com) existingCompanyInfo.x_com = req.body.x_com;
+      if (req.body.googleMap) existingCompanyInfo.googleMap = req.body.googleMap;
+      if (req.body.xCom) existingCompanyInfo.xCom = req.body.xCom;
       if (req.body.instagram) existingCompanyInfo.instagram = req.body.instagram;
       if (req.body.facebook) existingCompanyInfo.facebook = req.body.facebook;
       if (req.body.whatsapp) existingCompanyInfo.whatsapp = req.body.whatsapp;
@@ -134,7 +146,21 @@ export const createOrUpdateCompanyInfo = async (req: Request, res: Response): Pr
       await existingCompanyInfo.save();
       return res.status(200).json({ success: true, data: existingCompanyInfo });
     } else {
-      const newCompanyInfo = new CompanyInfo(req.body);
+      const dataJson = req.body;
+      if (dataJson.contactInfo){
+      const contactInfoData = JSON.parse(dataJson.contactInfo)
+      dataJson.contactInfo = contactInfoData
+    }
+      if (dataJson.servicesOffered){
+      const servicesOfferedData = JSON.parse(dataJson.servicesOffered)
+      dataJson.servicesOffered = servicesOfferedData
+    }
+      if (dataJson.facilitiesAmenities){
+      const facilitiesAmenitiesData = JSON.parse(dataJson.facilitiesAmenities)
+      dataJson.facilitiesAmenities = facilitiesAmenitiesData
+    }
+    const newCompanyInfo = new CompanyInfo(dataJson);
+      
       if (req.file) newCompanyInfo.logo = req.file.path; //logo upload through multer
 
       await newCompanyInfo.save();

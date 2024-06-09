@@ -22,28 +22,25 @@ export const updateUserSchema = Joi.object({
 
 export const companyInfoSchema = Joi.object({
   name: Joi.string().required(),
-  contactInfo: Joi.object({
-    phoneNumber: Joi.string().required(),
-    emailAddress: Joi.string().required(),
-  }).required(),
+  contactInfo: Joi.string().required(),
   location: Joi.object({
-    address: Joi.string().required(),
+    address: Joi.string().optional(),
     coordinates: Joi.object({
-      type: Joi.string().valid('Point').required(),
-      coordinates: Joi.array().items(Joi.number()).length(2).required(),
-    }).required(),
-  }).required(),
+      type: Joi.string().valid('Point').optional(),
+      coordinates: Joi.array().items(Joi.number()).length(2).optional(),
+    }).optional(),
+  }).optional(),
   logo: Joi.string().optional(),
   linkedin: Joi.string().optional(),
-  google_map: Joi.string().optional(),
-  x_com: Joi.string().optional(),
+  googleMap: Joi.string().optional(),
+  xCom: Joi.string().optional(),
   instagram: Joi.string().optional(),
   facebook: Joi.string().optional(),
   whatsapp: Joi.string().optional(),
   telegram: Joi.string().optional(),
   images: Joi.array().items(Joi.string()).optional(),
   aboutUs: Joi.string().optional(),
-  servicesOffered: Joi.array().items(Joi.string()).optional(),
-  facilitiesAmenities: Joi.array().items(Joi.string()).optional(),
-  testimonials: Joi.array().items(Joi.string()).optional()
+  servicesOffered: Joi.string().optional(),
+  facilitiesAmenities:  Joi.string().optional(),
+
 });

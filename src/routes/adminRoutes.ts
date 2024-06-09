@@ -18,7 +18,7 @@ router.post('/user', authenticateJWT(['ADMINISTRATOR']), adminController.createU
 router.put('/user/:id', authenticateJWT(['ADMINISTRATOR']), adminController.updateUser);
 
 // Update or Post Company Info
-router.post('/company-info',  [careHomeLogo.single('file'), bodyParserFormData], adminController.createOrUpdateCompanyInfo);
+router.post('/company-info',  [careHomeLogo.single('logo'), bodyParserFormData], adminController.createOrUpdateCompanyInfo);
 
 // Get Company Info
 router.get('/company-info', adminController.getCompanyInfo);

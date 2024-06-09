@@ -6,17 +6,17 @@ export interface ICompanyInfo extends Document {
     phoneNumber: string;
     emailAddress: string;
   };
-  location: {
-    address: string;
-    coordinates: {
+  location?: {
+    address?: string;
+    coordinates?: {
       type: string; // GeoJSON type (e.g., "Point")
       coordinates: [number]; // Array of longitude & latitude
     };
   };
   logo?: string;
   linkedin?: string;
-  google_map?: string;
-  x_com?: string;
+  googleMap?: string;
+  xCom?: string;
   instagram?: string;
   facebook?: string;
   whatsapp?: string;
@@ -49,7 +49,7 @@ const companyInfoSchema = new Schema(
     location: {
       address: {
         type: String,
-        required: true,
+        required: false,
       },
       coordinates: {
         type: {
@@ -58,7 +58,7 @@ const companyInfoSchema = new Schema(
         },
         coordinates: {
           type: [Number],
-          required: true,
+          required: false,
         },
       },
     },
@@ -70,11 +70,11 @@ const companyInfoSchema = new Schema(
       type: String,
       required: false,
     },
-    google_map: {
+    googleMap: {
       type: String,
       required: false,
     },
-    x_com: {
+    xCom: {
       type: String,
       required: false,
     },
