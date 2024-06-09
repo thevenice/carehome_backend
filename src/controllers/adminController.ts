@@ -141,7 +141,7 @@ export const createOrUpdateCompanyInfo = async (req: Request, res: Response): Pr
       if (req.body.facebook) existingCompanyInfo.facebook = req.body.facebook;
       if (req.body.whatsapp) existingCompanyInfo.whatsapp = req.body.whatsapp;
       if (req.body.telegram) existingCompanyInfo.telegram = req.body.telegram;
-      if (req.file) existingCompanyInfo.logo = req.file.path; //logo upload through multer
+      if (req.file) existingCompanyInfo.logo = req.file.filename; //logo upload through multer
 
       await existingCompanyInfo.save();
       return res.status(200).json({ success: true, data: existingCompanyInfo });
@@ -171,13 +171,37 @@ export const createOrUpdateCompanyInfo = async (req: Request, res: Response): Pr
   }
 };
 
+
 export const getCompanyInfo = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyInfo = await CompanyInfo.findOne();
     if (!companyInfo) {
       return res.status(404).json({ success: false, message: 'Company info not found' });
     }
-    return res.status(200).json({ success: true, data: companyInfo });
+
+    // Get the path to the logo file
+    const logoPath = companyInfo.logo ? `http://localhost:9091/logo/data/${companyInfo.logo}` : null;
+    console.log("logoPath: ", logoPath)
+    
+    if (logoPath) {
+      try {
+        return res.status(200).json({
+          success: true,
+          data: {
+            ...companyInfo.toObject(), // Convert the Mongoose document to a plain object
+            logo: logoPath
+          }
+        });
+      } catch (err) {
+        return res.status(500).json({ success: false, message: 'Error reading logo file', error: err });
+      }
+    } else {
+      // If there's no logo path, return the company info without the logo
+      return res.status(200).json({
+        success: true,
+        data: companyInfo.toObject()
+      });
+    }
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Error retrieving company info', error });
   }

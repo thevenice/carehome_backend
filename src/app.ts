@@ -5,6 +5,7 @@ import authRoutes from './routes/authRoutes'
 import cors from 'cors'
 import bodyParser from 'body-parser'
 import dotenv from 'dotenv';
+import path from 'path'
 
 // Load environment variables from .env file
 dotenv.config();
@@ -26,6 +27,8 @@ const corsOptions = {
 }
 app.use(cors(corsOptions))
 app.use(bodyParser.json())
+app.use('/logo/data', express.static(path.join("/Users/prakashpawar/Documents/prakash/carehome/carehome_backend", '/uploads/care-home-logo')));
+
 app.use(express.json())
 
 app.get('/api', async (req: any, res: any) => {
