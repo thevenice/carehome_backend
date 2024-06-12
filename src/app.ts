@@ -28,6 +28,7 @@ const corsOptions = {
 app.use(cors(corsOptions))
 app.use(bodyParser.json())
 app.use('/logo/data', express.static(path.join("/Users/prakashpawar/Documents/prakash/carehome/carehome_backend", '/uploads/care-home-logo')));
+app.use('/profile_picture/data', express.static(path.join("/Users/prakashpawar/Documents/prakash/carehome/carehome_backend", '/uploads/profile_pictures')));
 
 app.use(express.json())
 

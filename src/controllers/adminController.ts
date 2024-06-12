@@ -44,7 +44,28 @@ export const getUser = async (req: Request, res: Response) => {
       if (!user) {
         return res.status(404).json({ success: false, message: 'User not found' });
       }
-      return res.status(200).json({ success: true, data: user });
+    // Get the path to the logo file
+    const profile_picturePath = user.profile_picture ? `http://localhost:9091/profile_picture/data/${user.profile_picture}` : null;
+    console.log("profile_picturePath: ", profile_picturePath)
+    if (profile_picturePath) {
+      try {
+        return res.status(200).json({
+          success: true,
+          data: {
+            ...user.toObject(), // Convert the Mongoose document to a plain object
+            profile_picture: profile_picturePath
+          }
+        });
+      } catch (err) {
+        return res.status(500).json({ success: false, message: 'Error reading logo file', error: err });
+      }
+    } else {
+      // If there's no logo path, return the company info without the logo
+      return res.status(200).json({
+        success: true,
+        data: user.toObject()
+      });
+    }
     } else {
       const users = await User.find()
         .skip((pageNum - 1) * limitNum)

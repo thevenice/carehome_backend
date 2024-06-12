@@ -4,11 +4,15 @@ import crypto from 'crypto'
 import aws from 'aws-sdk'
 import multerS3 from 'multer-s3'
 
+
+
+// const spacesEndpoint = new aws.Endpoint(process.env.SPACES_ENDPOINT!);
+
 // Multer storage configuration
 const profilePicUploadStorage = multer.diskStorage({
   destination: function (req: any, file: any, cb: any) {
     // Specify the destination folder for profile pictures
-    cb(null, 'uploads/profile-pics')
+    cb(null, 'uploads/profile_pictures')
   },
   filename: function (req: any, file: any, cb: any) {
     // Generate a unique filename
@@ -36,6 +40,7 @@ export const profilePicUpload = multer({
     cb(new Error('Invalid file type. Only jpg, jpeg, and png are allowed.'))
   },
 })
+
 
 // const spacesEndpoint = new aws.Endpoint(process.env.SPACES_ENDPOINT!);
 
