@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import Joi from 'joi'
 
 export const createUserSchema = Joi.object({
   email: Joi.string().email().required(),
@@ -6,9 +6,19 @@ export const createUserSchema = Joi.object({
   active: Joi.boolean().optional(),
   fcm_token: Joi.string().optional(),
   otp: Joi.number().optional(),
-  role: Joi.string().valid('INTERVIEW_CANDIDATE', 'ADMINISTRATOR', 'CAREGIVER', 'RESIDENT', 'HEALTHCARE_PROFESSIONAL').default('INTERVIEW_CANDIDATE'),
-  email_verification: Joi.string().valid('COMPLETED', 'NOTCOMPLETED', 'PENDING').default('PENDING')
-});
+  role: Joi.string()
+    .valid(
+      'INTERVIEW_CANDIDATE',
+      'ADMINISTRATOR',
+      'CAREGIVER',
+      'RESIDENT',
+      'HEALTHCARE_PROFESSIONAL',
+    )
+    .default('INTERVIEW_CANDIDATE'),
+  email_verification: Joi.string()
+    .valid('COMPLETED', 'NOTCOMPLETED', 'PENDING')
+    .default('PENDING'),
+})
 
 export const updateUserSchema = Joi.object({
   email: Joi.string().email().optional(),
@@ -16,9 +26,19 @@ export const updateUserSchema = Joi.object({
   active: Joi.boolean().optional(),
   fcm_token: Joi.string().optional(),
   otp: Joi.number().optional(),
-  role: Joi.string().valid('INTERVIEW_CANDIDATE', 'ADMINISTRATOR', 'CAREGIVER', 'RESIDENT', 'HEALTHCARE_PROFESSIONAL').optional(),
-  email_verification: Joi.string().valid('COMPLETED', 'NOTCOMPLETED', 'PENDING').optional()
-});
+  role: Joi.string()
+    .valid(
+      'INTERVIEW_CANDIDATE',
+      'ADMINISTRATOR',
+      'CAREGIVER',
+      'RESIDENT',
+      'HEALTHCARE_PROFESSIONAL',
+    )
+    .optional(),
+  email_verification: Joi.string()
+    .valid('COMPLETED', 'NOTCOMPLETED', 'PENDING')
+    .optional(),
+})
 
 export const companyInfoSchema = Joi.object({
   name: Joi.string().required(),
@@ -41,6 +61,5 @@ export const companyInfoSchema = Joi.object({
   images: Joi.array().items(Joi.string()).optional(),
   aboutUs: Joi.string().optional(),
   servicesOffered: Joi.string().optional(),
-  facilitiesAmenities:  Joi.string().optional(),
-
-});
+  facilitiesAmenities: Joi.string().optional(),
+})

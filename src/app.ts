@@ -4,11 +4,11 @@ import adminRoutes from './routes/adminRoutes'
 import authRoutes from './routes/authRoutes'
 import cors from 'cors'
 import bodyParser from 'body-parser'
-import dotenv from 'dotenv';
+import dotenv from 'dotenv'
 import path from 'path'
 
 // Load environment variables from .env file
-dotenv.config();
+dotenv.config()
 export const app: Application = express()
 
 app.use(express.json({ limit: '10kb' }))
@@ -27,8 +27,24 @@ const corsOptions = {
 }
 app.use(cors(corsOptions))
 app.use(bodyParser.json())
-app.use('/logo/data', express.static(path.join("/Users/prakashpawar/Documents/prakash/carehome/carehome_backend", '/uploads/care-home-logo')));
-app.use('/profile_picture/data', express.static(path.join("/Users/prakashpawar/Documents/prakash/carehome/carehome_backend", '/uploads/profile_pictures')));
+app.use(
+  '/logo/data',
+  express.static(
+    path.join(
+      '/Users/prakashpawar/Documents/prakash/carehome/carehome_backend',
+      '/uploads/care-home-logo',
+    ),
+  ),
+)
+app.use(
+  '/profile_picture/data',
+  express.static(
+    path.join(
+      '/Users/prakashpawar/Documents/prakash/carehome/carehome_backend',
+      '/uploads/profile_pictures',
+    ),
+  ),
+)
 
 app.use(express.json())
 
@@ -39,5 +55,5 @@ app.get('/api', async (req: any, res: any) => {
     res.send({ error: error })
   }
 })
-app.use('/api/admin', adminRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes)
+app.use('/api/auth', authRoutes)
