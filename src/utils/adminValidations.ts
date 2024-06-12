@@ -1,6 +1,7 @@
 import Joi from 'joi'
 
 export const createUserSchema = Joi.object({
+  name: Joi.string().max(20).optional(),
   email: Joi.string().email().required(),
   password: Joi.string().min(8).required(),
   active: Joi.boolean().optional(),
@@ -21,6 +22,7 @@ export const createUserSchema = Joi.object({
 })
 
 export const updateUserSchema = Joi.object({
+  name: Joi.string().max(20).optional(),
   email: Joi.string().email().optional(),
   password: Joi.string().min(8).optional(),
   active: Joi.boolean().optional(),

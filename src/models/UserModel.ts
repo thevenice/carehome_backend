@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt'
 export interface IUser extends Document {
   password: string
   email: string
+  name?: string
   active: boolean
   fcm_token: string
   otp: number | undefined
@@ -24,6 +25,7 @@ export interface IUser extends Document {
 
 const userSchema = new Schema(
   {
+    name: { type: String, required: false },
     password: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     active: { type: Boolean, default: true },
