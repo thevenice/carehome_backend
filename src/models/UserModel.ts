@@ -7,6 +7,7 @@ export interface IUser extends Document {
   active: boolean;
   fcm_token: string;
   otp: number | undefined;
+  profile_picture: string | undefined;
   role:
     | 'INTERVIEW_CANDIDATE'
     | 'ADMINISTRATOR'
@@ -28,6 +29,7 @@ const userSchema = new Schema(
     active: { type: Boolean, default: true },
     fcm_token: { type: String, required: false },
     otp: { type: Number, required: false, default: undefined },
+    profile_picture: { type: String, required: false, default: undefined },
     role: {
       type: String,
       enum: [

@@ -12,10 +12,10 @@ router.get('/884919', adminController.createDummyAdmin);
 router.get('/user', authenticateJWT(['ADMINISTRATOR']), adminController.getUser);
 
 // Create User
-router.post('/user', authenticateJWT(['ADMINISTRATOR']), adminController.createUser);
+router.post('/user', [careHomeLogo.single('profile_picture'), bodyParserFormData], authenticateJWT(['ADMINISTRATOR']), adminController.createUser);
 
 // Update User
-router.put('/user/:id', authenticateJWT(['ADMINISTRATOR']), adminController.updateUser);
+router.put('/user/:id', [careHomeLogo.single('profile_picture'), bodyParserFormData],  authenticateJWT(['ADMINISTRATOR']), adminController.updateUser);
 
 // Update or Post Company Info
 router.post('/company-info',  [careHomeLogo.single('logo'), bodyParserFormData], adminController.createOrUpdateCompanyInfo);

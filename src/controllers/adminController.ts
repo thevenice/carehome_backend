@@ -71,7 +71,13 @@ export const createUser = async (req: Request, res: Response) => {
   }
 
   try {
+    const existingUser = await User.findOne({email: req.body.email})
+
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'Email already exists' });
+    }
     const newUser = new User(req.body);
+    if (req.file) newUser.profile_picture = req.file.filename; //profile_picture upload through multer
     await newUser.save();
     res.status(201).json({ success: true, data: newUser });
   } catch (error: any) {
@@ -88,9 +94,11 @@ export const updateUser = async (req: Request, res: Response) => {
   if (error) {
     return res.status(400).json({ success: false, message: error.details[0].message });
   }
-
+  
   try {
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updateData = req.body
+    if (req.file) updateData.profile_picture = req.file.filename; //profile_picture upload through multer
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, updateData, { new: true });
     if (!updatedUser) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
