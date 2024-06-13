@@ -17,7 +17,7 @@ router.get('/user', authenticateJWT(['ADMINISTRATOR']), adminController.getUser)
 // Create User
 router.post(
   '/user',
-  [profilePicUpload.single('profile_picture'), bodyParserFormData],
+  [profilePicUpload.single('profile_picture_image'), bodyParserFormData],
   authenticateJWT(['ADMINISTRATOR']),
   adminController.createUser,
 )
@@ -25,7 +25,7 @@ router.post(
 // Update User
 router.put(
   '/user/:id',
-  [profilePicUpload.single('profile_picture'), bodyParserFormData],
+  [profilePicUpload.single('profile_picture_image'), bodyParserFormData],
   authenticateJWT(['ADMINISTRATOR']),
   adminController.updateUser,
 )
