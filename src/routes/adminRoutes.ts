@@ -40,4 +40,24 @@ router.post(
 // Get Company Info
 router.get('/company-info', adminController.getCompanyInfo)
 
+
+// documents APIs
+router.get('/documents', adminController.getDocuments);
+router.get('/documents/:id', adminController.getDocumentById);
+router.post('/documents', adminController.createDocument);
+router.put('/documents/:id', adminController.updateDocument);
+router.delete('/documents/:id', adminController.deleteDocument);
+
+// healthcare professionals APIs
+router.get('/healthcare-professionals', adminController.getHealthCareProfessional);
+router.post('/healthcare-professionals', adminController.createHealthCareProfessional);
+router.put('/healthcare-professionals/:id', adminController.updateHealthCareProfessional);
+router.delete('/healthcare-professionals/:id', adminController.deleteHealthCareProfessional);
+
+// care giver APIs
+router.post('/caregivers', adminController.createCaregiver);
+router.get('/caregivers', adminController.getCaregiver);
+router.put('/caregivers/:id', adminController.updateCaregiverById);
+router.delete('/caregivers/:id', adminController.deleteCaregiverById);
+
 export default router

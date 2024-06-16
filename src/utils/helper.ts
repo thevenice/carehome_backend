@@ -38,3 +38,27 @@ export function generateOTP(): string {
   return otp
   // return '098765'
 }
+export const paginate = async (model: any, query: any, page: number, limit: number) => {
+  const pageNum: number = page || 1;
+  const limitNum: number = limit || 10;
+
+  let resultsQuery = model.find(query).skip((pageNum - 1) * limitNum).limit(limitNum);
+
+  const total = await model.countDocuments(query);
+
+  // Check if 'documents' field exists in the model schema
+  const schema = model.schema.obj;
+  if (schema.hasOwnProperty('documents')) {
+    resultsQuery = resultsQuery.populate('documents');
+  }
+
+  const results = await resultsQuery;
+
+  return {
+    docs: results,
+    totalPages: Math.ceil(total / limitNum),
+    currentPage: pageNum,
+    total: total,
+    limit: limitNum
+  };
+};
