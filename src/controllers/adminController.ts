@@ -48,7 +48,7 @@ export const createDummyAdmin = async (req: Request, res: Response) => {
 
 // Get User or All Users
 export const getUser = async (req: Request, res: Response) => {
-  const { id } = req.query
+  const { id, role } = req.query
   let { page, limit } = req.query
 
   try {
@@ -100,7 +100,11 @@ export const getUser = async (req: Request, res: Response) => {
         })
       }
     } else {
-      const result = await paginate(User, {}, options.page, options.limit)
+      const query:any = {}
+      if (role) {
+        query.role = role;
+      }
+      const result = await paginate(User, query, options.page, options.limit)
       return res.status(200).json({
         success: true,
         data: result.docs,
