@@ -718,14 +718,21 @@ export const updateCaregiverById = async (
         .status(400)
         .json({ success: false, message: 'User does not exist' })
     }
+    // Check if the user role is "caregiver"
+    if (userExists.role !== 'CAREGIVER') {
+      return res
+        .status(400)
+        .json({ success: false, message: 'User role is not caregiver' })
+    }
     const caregiver = await Caregiver.findOneAndUpdate({
       userId: req.params.id,
       ...req.body,
     }).populate('documents')
     if (!caregiver) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Caregiver not found' })
+    // Create a new Caregiver profile
+    const newCaregiver = new Caregiver(req.body)
+    await newCaregiver.save()
+    return res.status(200).json({ success: true, data: null })
     }
     return res.status(200).json({ success: true, data: null })
   } catch (error) {
