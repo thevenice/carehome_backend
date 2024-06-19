@@ -452,6 +452,12 @@ export const updateHealthCareProfessional = async (
         .status(400)
         .json({ success: false, message: 'User does not exist' })
     }
+    // Check if the user role is "HealthCareProfessional"
+    if (userExists.role !== 'HEALTHCARE_PROFESSIONAL') {
+      return res
+        .status(400)
+        .json({ success: false, message: 'User role is not HealthCareProfessional' })
+    }
     const updatedHealthCareProfessional =
       await HealthCareProfessional.findOneAndUpdate({
         userId: req.params.id,
@@ -705,6 +711,8 @@ export const updateCaregiverById = async (
 ): Promise<Response> => {
   try {
     const { error } = updateCaregiverSchema.validate(req.body)
+    const userId = req.params.id
+
     if (error) {
       return res
         .status(400)
@@ -712,7 +720,7 @@ export const updateCaregiverById = async (
     }
 
     // Check if the user exists
-    const userExists = await User.findById(req.params.id)
+    const userExists = await User.findById(userId)
     if (!userExists) {
       return res
         .status(400)
@@ -725,12 +733,15 @@ export const updateCaregiverById = async (
         .json({ success: false, message: 'User role is not caregiver' })
     }
     const caregiver = await Caregiver.findOneAndUpdate({
-      userId: req.params.id,
+      userId: userId,
       ...req.body,
     }).populate('documents')
     if (!caregiver) {
     // Create a new Caregiver profile
-    const newCaregiver = new Caregiver(req.body)
+    const newCaregiver = new Caregiver({
+      userId: userId,
+      ...req.body,
+    })
     await newCaregiver.save()
     return res.status(200).json({ success: true, data: null })
     }
