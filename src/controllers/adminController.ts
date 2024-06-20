@@ -448,6 +448,7 @@ export const updateHealthCareProfessional = async (
   }
 
   try {
+    const userId = req.params.id
     // Check if the user exists
     const userExists = await User.findById(req.params.id)
     if (!userExists) {
@@ -463,16 +464,21 @@ export const updateHealthCareProfessional = async (
     }
     const updatedHealthCareProfessional =
       await HealthCareProfessional.findOneAndUpdate({
-        userId: req.params.id,
+        userId: userId,
         ...req.body,
       })
     if (!updatedHealthCareProfessional) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'HealthCareProfessional not found' })
+    // Create a new HealthCareProfessional profile
+    const newHealthCareProfessional = new HealthCareProfessional({
+      userId: userId,
+      ...req.body,
+    })
+    await newHealthCareProfessional.save()
+    return res.status(200).json({ success: true, data: null })
     }
     res.status(200).json({ success: true, data: null })
   } catch (error) {
+    console.log("error: ", error)
     res
       .status(500)
       .json({
