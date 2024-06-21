@@ -4,6 +4,7 @@ import authenticateJWT from '../middlewares/auth'
 import {
   careHomeLogo,
   profilePicUpload,
+  usersDocuments,
 } from '../middlewares/profilePictureUpload'
 import bodyParserFormData from '../middlewares/bodyParserFormData'
 
@@ -43,9 +44,14 @@ router.get('/company-info', adminController.getCompanyInfo)
 
 // documents APIs
 router.get('/documents', adminController.getDocuments);
-router.get('/documents/:id', adminController.getDocumentById);
-router.post('/documents', adminController.createDocument);
-router.put('/documents/:id', adminController.updateDocument);
+router.post('/documents', 
+[usersDocuments.single('file'), bodyParserFormData],
+authenticateJWT(['ADMINISTRATOR']),
+adminController.createDocument);
+router.put('/documents/:id',
+[usersDocuments.single('file'), bodyParserFormData],
+authenticateJWT(['ADMINISTRATOR']),
+adminController.updateDocument);
 router.delete('/documents/:id', adminController.deleteDocument);
 
 // healthcare professionals APIs

@@ -521,41 +521,81 @@ export const deleteHealthCareProfessional = async (
 
 // GET /api/documents
 export const getDocuments = async (req: Request, res: Response) => {
-  try {
-    const documents = await DocumentModel.find()
-    res.status(200).json({ success: true, data: documents })
-  } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: 'Error retrieving documents', error })
-  }
-}
+  const { documentId } = req.query;
 
-// GET /api/documents/:id
-export const getDocumentById = async (req: Request, res: Response) => {
-  const { id } = req.params
   try {
-    const document = await DocumentModel.findById(id)
-    if (!document) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Document not found' })
+    if (documentId) {
+      const document = await DocumentModel.findById(documentId);
+
+      if (!document) {
+        return res
+          .status(404)
+          .json({ success: false, message: 'Document not found' });
+      }
+
+      const documentObj = document.toObject();
+      const link = documentObj.filename
+        ? `http://localhost:9091/documents/data/${documentObj.filename}`
+        : null;
+
+      //@ts-ignore
+      delete documentObj.filename;
+
+      return res.status(200).json({
+        success: true,
+        data: { ...documentObj, link },
+      });
+    } else {
+      const documents = await DocumentModel.find();
+
+      const documentsWithLinks = documents.map((doc) => {
+        const docObj = doc.toObject();
+        const link = docObj.filename
+          ? `http://localhost:9091/documents/data/${docObj.filename}`
+          : null;
+
+        //@ts-ignore
+        delete docObj.filename;
+
+        return { ...docObj, link };
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: documentsWithLinks,
+      });
     }
-    res.status(200).json({ success: true, data: document })
   } catch (error) {
     res
       .status(500)
-      .json({ success: false, message: 'Error retrieving document', error })
+      .json({ success: false, message: 'Error retrieving documents', error });
   }
-}
+};
+
 
 // POST /api/documents
-export const createDocument = async (req: Request, res: Response) => {
-  const { title, fileType, url } = req.body
+export const createDocument = async (req: any, res: Response) => {
+  const { title } = req.body
+  const user = req.user
+
+  let filename:string | undefined = req.file?.filename //doc upload through multer
   try {
-    const newDocument = new DocumentModel({ title, fileType, url })
+    if (!filename) {
+      res
+        .status(400)
+        .json({ success: false, message: 'Error creating document', error: "filename not found" })
+    }
+    const newDocument = new DocumentModel({ title, filename, createdBy:user.id })
     await newDocument.save()
-    res.status(201).json({ success: true, data: newDocument })
+    const savedDoc = newDocument.toObject()
+    // Get the path to the logo file
+        const link = savedDoc.filename
+          ? `http://localhost:9091/documents/data/${savedDoc.filename}`
+          : null
+          //@ts-ignore
+        delete savedDoc.filename
+      
+    res.status(201).json({ success: true, data: {...savedDoc, "link": link} })
   } catch (error) {
     res
       .status(500)
@@ -564,34 +604,52 @@ export const createDocument = async (req: Request, res: Response) => {
 }
 
 // PUT /api/documents/:id
-export const updateDocument = async (req: Request, res: Response) => {
-  const { id } = req.params
-  const { name, fileType, url } = req.body
+export const updateDocument = async (req: any, res: Response) => {
+  const { id } = req.params;
+  const { title } = req.body;
+  const user = req.user;
+
+  let filename: string | undefined = req.file?.filename; // Document upload through multer
+
   try {
-    // Check if the user exists
-    const userExists = await User.findById(req.params.id)
-    if (!userExists) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'User does not exist' })
-    }
-    const updatedDocument = await DocumentModel.findByIdAndUpdate(
-      id,
-      { name, fileType, url },
-      { new: true },
-    )
-    if (!updatedDocument) {
+    const document = await DocumentModel.findById(id);
+
+    if (!document) {
       return res
         .status(404)
-        .json({ success: false, message: 'Document not found' })
+        .json({ success: false, message: 'Document not found' });
     }
-    res.status(200).json({ success: true, data: updatedDocument })
+
+    if (document.createdBy.toString() !== user.id) {
+      return res
+        .status(403)
+        .json({ success: false, message: 'Unauthorized to update this document' });
+    }
+
+    if (title) {
+      document.title = title;
+    }
+
+    if (filename) {
+      document.filename = filename;
+    }
+
+    await document.save();
+    const updatedDoc = document.toObject();
+    const link = updatedDoc.filename
+      ? `http://localhost:9091/documents/data/${updatedDoc.filename}`
+      : null;
+
+    //@ts-ignore
+    delete updatedDoc.filename;
+
+    res.status(200).json({ success: true, data: { ...updatedDoc, link } });
   } catch (error) {
     res
       .status(500)
-      .json({ success: false, message: 'Error updating document', error })
+      .json({ success: false, message: 'Error updating document', error });
   }
-}
+};
 
 // DELETE /api/documents/:id
 export const deleteDocument = async (req: Request, res: Response) => {

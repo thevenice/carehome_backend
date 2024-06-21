@@ -56,6 +56,21 @@ const careHomeLogoStorage = multer.diskStorage({
   },
 })
 
+// Multer storage configuration
+const usersDocumentStorage = multer.diskStorage({
+  destination: function (req: any, file: any, cb: any) {
+    // Specify the destination folder for profile pictures
+    cb(null, 'uploads/user-docs')
+  },
+  filename: function (req: any, file: any, cb: any) {
+    // Generate a unique filename
+    const uniqueFilename = `${Date.now()}-${Math.round(
+      Math.random() * 1e9,
+    )}${path.extname(file.originalname)}`
+    cb(null, uniqueFilename)
+  },
+})
+
 // Multer middleware for profile picture upload
 export const careHomeLogo = multer({
   storage: careHomeLogoStorage,
@@ -73,6 +88,21 @@ export const careHomeLogo = multer({
     cb(new Error('Invalid file type. Only jpg, jpeg, and png are allowed.'))
   },
 })
+export const usersDocuments = multer({
+  storage: usersDocumentStorage, // storage configuration
+  limits: {
+    fileSize: 1024 * 1024 * 5 // Limit file size to 5MB
+  },
+  fileFilter: function (req: any, file: any, cb: any) {
+    // Allow specific document file types (e.g., PDF, DOCX, TXT)
+    const allowedMimeTypes = ['application/pdf', 'application/msword', 'text/plain'];
+    if (allowedMimeTypes.includes(file.mimetype)) {
+      return cb(null, true);
+    }
+    cb(new Error('Invalid file type. Only PDF, DOCX, and TXT files are allowed.'));
+  },
+});
+
 
 // export const s3: any = new aws.S3({
 //   endpoint: spacesEndpoint,

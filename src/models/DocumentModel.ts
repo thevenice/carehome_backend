@@ -1,9 +1,10 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 export interface IDocument extends Document {
   title: string;
-  url: string; // URL or path to the document
+  filename: string; // filename or path to the document
   uploadedAt: Date;
+  createdBy: Types.ObjectId;
 }
 
 const documentSchema = new Schema<IDocument>(
@@ -12,13 +13,18 @@ const documentSchema = new Schema<IDocument>(
       type: String,
       required: true,
     },
-    url: {
+    filename: {
       type: String,
       required: true,
     },
     uploadedAt: {
       type: Date,
       default: Date.now,
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
   },
   {

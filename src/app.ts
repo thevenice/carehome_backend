@@ -45,6 +45,15 @@ app.use(
     ),
   ),
 )
+app.use(
+  '/documents/data',
+  express.static(
+    path.join(
+      '/Users/prakashpawar/Documents/prakash/carehome/carehome_backend',
+      '/uploads/user-docs',
+    ),
+  ),
+)
 
 app.use(express.json())
 
