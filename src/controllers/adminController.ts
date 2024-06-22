@@ -519,7 +519,6 @@ export const deleteHealthCareProfessional = async (
   }
 }
 
-// GET /api/documents
 export const getDocuments = async (req: Request, res: Response) => {
   const { documentId } = req.query;
   const { page = 1, limit = 10 } = req.query
@@ -534,33 +533,35 @@ export const getDocuments = async (req: Request, res: Response) => {
       options.page = 1
       options.limit = 9999 // large number to get all in one page
     }
+
     if (documentId) {
-      const document = await DocumentModel.findById(documentId);
+      const document = await DocumentModel.findById(documentId)
+        .populate('createdBy', 'email name')
+        .populate('associatedUsers', 'email name');
 
-      if (!document) {
-        return res
-          .status(404)
-          .json({ success: false, message: 'Document not found' });
-      }
 
-      const documentObj = document.toObject();
-      const link = documentObj.filename
-        ? `http://localhost:9091/documents/data/${documentObj.filename}`
-        : null;
-
-      //@ts-ignore
-      delete documentObj.filename;
-
-      return res.status(200).json({
-        success: true,
-        data: { ...documentObj, link },
-      });
+        if (!document) {
+          return res
+            .status(404)
+            .json({ success: false, message: 'Document not found' });
+        }
+  
+        const documentObj = document.toObject();
+        const link = documentObj.filename
+          ? `http://localhost:9091/documents/data/${documentObj.filename}`
+          : null;
+  
+        //@ts-ignore
+        delete documentObj.filename;
+  
+        return res.status(200).json({
+          success: true,
+          data: { ...documentObj, link },
+        });
     } else {
-      // const documents = await DocumentModel.find();
       const documents = await paginate(DocumentModel, {}, options.page, options.limit)
 
-
-      const documentsWithLinks = [...documents.docs].map((doc) => {
+      const documentsWithLinks = await Promise.all(documents.docs.map(async (doc:any) => {
         const docObj = doc.toObject();
         const link = docObj.filename
           ? `http://localhost:9091/documents/data/${docObj.filename}`
@@ -569,8 +570,12 @@ export const getDocuments = async (req: Request, res: Response) => {
         //@ts-ignore
         delete docObj.filename;
 
-        return { ...docObj, link };
-      });
+        // Populate createdBy and associatedUsers
+        await doc.populate('createdBy', 'email name');
+        await doc.populate('associatedUsers', 'email name');
+
+        return { ...docObj, link, createdBy: doc.createdBy, associatedUsers: doc.associatedUsers };
+      }));
 
       return res.status(200).json({
         success: true,
@@ -588,44 +593,50 @@ export const getDocuments = async (req: Request, res: Response) => {
   }
 };
 
-
 // POST /api/documents
 export const createDocument = async (req: any, res: Response) => {
-  const { title } = req.body
-  const user = req.user
+  const { title, associatedUsers } = req.body;
+  const user = req.user;
 
-  let filename:string | undefined = req.file?.filename //doc upload through multer
+  let filename: string | undefined = req.file?.filename;
   try {
     if (!filename) {
-      res
+      return res
         .status(400)
-        .json({ success: false, message: 'Error creating document', error: "filename not found" })
+        .json({ success: false, message: 'Error creating document', error: "filename not found" });
     }
-    const newDocument = new DocumentModel({ title, filename, createdBy:user.id })
-    await newDocument.save()
-    const savedDoc = newDocument.toObject()
-    // Get the path to the logo file
-        const link = savedDoc.filename
-          ? `http://localhost:9091/documents/data/${savedDoc.filename}`
-          : null
-          //@ts-ignore
-        delete savedDoc.filename
-      
-    res.status(201).json({ success: true, data: {...savedDoc, "link": link} })
+    const newDocument = new DocumentModel({ 
+      title, 
+      filename, 
+      createdBy: user.id,
+      associatedUsers: associatedUsers || []
+    });
+    await newDocument.save();
+    const savedDoc = await newDocument.populate('createdBy', 'email name');
+    await savedDoc.populate('associatedUsers', 'email name');
+    const savedDocObj = savedDoc.toObject();
+
+    const link = savedDocObj.filename
+      ? `http://localhost:9091/documents/data/${savedDocObj.filename}`
+      : null;
+    //@ts-ignore
+    delete savedDocObj.filename;
+    
+    res.status(201).json({ success: true, data: {...savedDocObj, link} });
   } catch (error) {
     res
       .status(500)
-      .json({ success: false, message: 'Error creating document', error })
+      .json({ success: false, message: 'Error creating document', error });
   }
-}
+};
 
 // PUT /api/documents/:id
 export const updateDocument = async (req: any, res: Response) => {
   const { id } = req.params;
-  const { title } = req.body;
+  const { title, associatedUsers } = req.body;
   const user = req.user;
 
-  let filename: string | undefined = req.file?.filename; // Document upload through multer
+  let filename: string | undefined = req.file?.filename;
 
   try {
     const document = await DocumentModel.findById(id);
@@ -650,7 +661,13 @@ export const updateDocument = async (req: any, res: Response) => {
       document.filename = filename;
     }
 
+    if (associatedUsers) {
+      document.associatedUsers = associatedUsers;
+    }
+
     await document.save();
+    await document.populate('createdBy', 'email name');
+    await document.populate('associatedUsers', 'email name');
     const updatedDoc = document.toObject();
     const link = updatedDoc.filename
       ? `http://localhost:9091/documents/data/${updatedDoc.filename}`

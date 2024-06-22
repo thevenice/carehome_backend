@@ -5,6 +5,7 @@ export interface IDocument extends Document {
   filename: string; // filename or path to the document
   uploadedAt: Date;
   createdBy: Types.ObjectId;
+  associatedUsers?: [Types.ObjectId];
 }
 
 const documentSchema = new Schema<IDocument>(
@@ -24,8 +25,13 @@ const documentSchema = new Schema<IDocument>(
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false,
     },
+    associatedUsers: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    }],
   },
   {
     timestamps: false,
