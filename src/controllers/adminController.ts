@@ -522,8 +522,18 @@ export const deleteHealthCareProfessional = async (
 // GET /api/documents
 export const getDocuments = async (req: Request, res: Response) => {
   const { documentId } = req.query;
-
+  const { page = 1, limit = 10 } = req.query
   try {
+    const options = {
+      page: Number(page) || 1,
+      limit: Number(limit) || 10,
+    }
+
+    // Default to all in one page if no pagination params are provided
+    if (!page || !limit) {
+      options.page = 1
+      options.limit = 9999 // large number to get all in one page
+    }
     if (documentId) {
       const document = await DocumentModel.findById(documentId);
 
@@ -546,9 +556,11 @@ export const getDocuments = async (req: Request, res: Response) => {
         data: { ...documentObj, link },
       });
     } else {
-      const documents = await DocumentModel.find();
+      // const documents = await DocumentModel.find();
+      const documents = await paginate(DocumentModel, {}, options.page, options.limit)
 
-      const documentsWithLinks = documents.map((doc) => {
+
+      const documentsWithLinks = [...documents.docs].map((doc) => {
         const docObj = doc.toObject();
         const link = docObj.filename
           ? `http://localhost:9091/documents/data/${docObj.filename}`
@@ -563,7 +575,11 @@ export const getDocuments = async (req: Request, res: Response) => {
       return res.status(200).json({
         success: true,
         data: documentsWithLinks,
-      });
+        totalPages: documents.totalPages,
+        currentPage: documents.currentPage,
+        total: documents.total,
+        limit: documents.limit,
+      })
     }
   } catch (error) {
     res
