@@ -18,6 +18,7 @@ import {
 import DocumentModel from '../models/DocumentModel'
 import { paginate } from '../utils/helper'
 import Caregiver from '../models/CaregiverModel'
+import mongoose, { Types } from 'mongoose'
 
 export const createDummyAdmin = async (req: Request, res: Response) => {
   try {
@@ -100,9 +101,9 @@ export const getUser = async (req: Request, res: Response) => {
         })
       }
     } else {
-      const query:any = {}
+      const query: any = {}
       if (role) {
-        query.role = role;
+        query.role = role
       }
       if (active) {
         query.active = active
@@ -366,13 +367,11 @@ export const getHealthCareProfessional = async (
     }
   } catch (error) {
     console.error('Error retrieving HealthCareProfessionals', error)
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: 'Error retrieving HealthCareProfessionals',
-        error,
-      })
+    return res.status(500).json({
+      success: false,
+      message: 'Error retrieving HealthCareProfessionals',
+      error,
+    })
   }
 }
 
@@ -400,24 +399,19 @@ export const createHealthCareProfessional = async (
     }
     // Check if the user role is "HEALTHCARE_PROFESSIONAL"
     if (userExists.role !== 'HEALTHCARE_PROFESSIONAL') {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: 'User role is not healthcare professional',
-        })
+      return res.status(400).json({
+        success: false,
+        message: 'User role is not healthcare professional',
+      })
     }
     // Check if a profile already exists for the user
     const existingProfile = await HealthCareProfessional.findOne({ userId })
 
     if (existingProfile) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message:
-            'HealthCareProfessional profile already exists for this user',
-        })
+      return res.status(400).json({
+        success: false,
+        message: 'HealthCareProfessional profile already exists for this user',
+      })
     }
     // Create a new HealthCareProfessional profile
     const newHealthCareProfessional = new HealthCareProfessional(req.body)
@@ -425,13 +419,11 @@ export const createHealthCareProfessional = async (
 
     res.status(201).json({ success: true, data: newHealthCareProfessional })
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: 'Error creating HealthCareProfessional',
-        error,
-      })
+    res.status(500).json({
+      success: false,
+      message: 'Error creating HealthCareProfessional',
+      error,
+    })
   }
 }
 
@@ -460,7 +452,10 @@ export const updateHealthCareProfessional = async (
     if (userExists.role !== 'HEALTHCARE_PROFESSIONAL') {
       return res
         .status(400)
-        .json({ success: false, message: 'User role is not HealthCareProfessional' })
+        .json({
+          success: false,
+          message: 'User role is not HealthCareProfessional',
+        })
     }
     const updatedHealthCareProfessional =
       await HealthCareProfessional.findOneAndUpdate({
@@ -468,24 +463,22 @@ export const updateHealthCareProfessional = async (
         ...req.body,
       })
     if (!updatedHealthCareProfessional) {
-    // Create a new HealthCareProfessional profile
-    const newHealthCareProfessional = new HealthCareProfessional({
-      userId: userId,
-      ...req.body,
-    })
-    await newHealthCareProfessional.save()
-    return res.status(200).json({ success: true, data: null })
+      // Create a new HealthCareProfessional profile
+      const newHealthCareProfessional = new HealthCareProfessional({
+        userId: userId,
+        ...req.body,
+      })
+      await newHealthCareProfessional.save()
+      return res.status(200).json({ success: true, data: null })
     }
     res.status(200).json({ success: true, data: null })
   } catch (error) {
-    console.log("error: ", error)
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: 'Error updating HealthCareProfessional',
-        error,
-      })
+    console.log('error: ', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error updating HealthCareProfessional',
+      error,
+    })
   }
 }
 
@@ -502,33 +495,40 @@ export const deleteHealthCareProfessional = async (
         .status(404)
         .json({ success: false, message: 'HealthCareProfessional not found' })
     }
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: 'HealthCareProfessional deleted successfully',
-      })
+    res.status(200).json({
+      success: true,
+      message: 'HealthCareProfessional deleted successfully',
+    })
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: 'Error deleting HealthCareProfessional',
-        error,
-      })
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting HealthCareProfessional',
+      error,
+    })
   }
 }
 
 export const getDocuments = async (req: Request, res: Response) => {
-  const { documentId } = req.query;
-  const { page = 1, limit = 10 } = req.query
+  const {
+    documentId,
+    page = 1,
+    limit = 10,
+    search_field,
+    search_text,
+  } = req.query
+  const _search_field = search_field ? search_field.toString() : ''
+  const searchParam = !search_text
+    ? ''
+    : typeof search_text === 'string'
+      ? search_text
+      : search_text?.toString()
+
   try {
     const options = {
       page: Number(page) || 1,
       limit: Number(limit) || 10,
     }
 
-    // Default to all in one page if no pagination params are provided
     if (!page || !limit) {
       options.page = 1
       options.limit = 9999 // large number to get all in one page
@@ -537,152 +537,247 @@ export const getDocuments = async (req: Request, res: Response) => {
     if (documentId) {
       const document = await DocumentModel.findById(documentId)
         .populate('createdBy', 'email name')
-        .populate('associatedUsers', 'email name');
+        .populate('associatedUsers', 'email name')
 
+      if (!document) {
+        return res
+          .status(404)
+          .json({ success: false, message: 'Document not found' })
+      }
 
-        if (!document) {
-          return res
-            .status(404)
-            .json({ success: false, message: 'Document not found' });
-        }
-  
-        const documentObj = document.toObject();
-        const link = documentObj.filename
-          ? `http://localhost:9091/documents/data/${documentObj.filename}`
-          : null;
-  
-        //@ts-ignore
-        delete documentObj.filename;
-  
-        return res.status(200).json({
-          success: true,
-          data: { ...documentObj, link },
-        });
+      const documentObj = document.toObject()
+      const link = documentObj.filename
+        ? `http://localhost:9091/documents/data/${documentObj.filename}`
+        : null
+
+      //@ts-ignore
+      delete documentObj.filename
+
+      return res.status(200).json({
+        success: true,
+        data: { ...documentObj, link },
+      })
     } else {
-      const documents = await paginate(DocumentModel, {}, options.page, options.limit)
+      let searchQuery: any = {}
 
-      const documentsWithLinks = await Promise.all(documents.docs.map(async (doc:any) => {
-        const docObj = doc.toObject();
-        const link = docObj.filename
-          ? `http://localhost:9091/documents/data/${docObj.filename}`
-          : null;
+      if (_search_field && search_text) {
+        switch (_search_field.toLowerCase()) {
+          case 'title':
+            searchQuery[_search_field] = {
+              $regex: new RegExp(searchParam, 'i'),
+            }
+            break
+          case 'createdby.name':
+          case 'createdby.email':
+          case 'associatedusers.name':
+          case 'associatedusers.email':
+            break // Handled separately in the aggregation pipeline
+          case 'uploadedat':
+            searchQuery['uploadedAt'] = { $regex: new RegExp(searchParam, 'i') }
+            break
+          case 'documentid':
+            searchQuery['_id'] = mongoose.Types.ObjectId.isValid(searchParam)
+              ? new Types.ObjectId(searchParam)
+              : null
+            break
+          default:
+            return res
+              .status(400)
+              .json({ success: false, message: 'Invalid search field' })
+        }
+      }
+
+      const aggregateQuery: any[] = [
+        { $match: searchQuery },
+        {
+          $lookup: {
+            from: 'users', // Collection name in the database
+            localField: 'createdBy',
+            foreignField: '_id',
+            as: 'createdBy',
+          },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'associatedUsers',
+            foreignField: '_id',
+            as: 'associatedUsers',
+          },
+        },
+      ]
+
+      if (_search_field && search_text) {
+        switch (_search_field.toLowerCase()) {
+          case 'createdby.name':
+            aggregateQuery.push({
+              $match: {
+                'createdBy.name': { $regex: new RegExp(searchParam, 'i') },
+              },
+            })
+            break
+          case 'createdby.email':
+            aggregateQuery.push({
+              $match: {
+                'createdBy.email': { $regex: new RegExp(searchParam, 'i') },
+              },
+            })
+            break
+          case 'associatedusers.name':
+            aggregateQuery.push({
+              $match: {
+                'associatedUsers.name': {
+                  $regex: new RegExp(searchParam, 'i'),
+                },
+              },
+            })
+            break
+          case 'associatedusers.email':
+            aggregateQuery.push({
+              $match: {
+                'associatedUsers.email': {
+                  $regex: new RegExp(searchParam, 'i'),
+                },
+              },
+            })
+            break
+        }
+      }
+
+      aggregateQuery.push(
+        { $skip: (options.page - 1) * options.limit },
+        { $limit: options.limit },
+      )
+
+      const documents = await DocumentModel.aggregate(aggregateQuery)
+
+      const documentsWithLinks = documents.map((doc: any) => {
+        const link = doc.filename
+          ? `http://localhost:9091/documents/data/${doc.filename}`
+          : null
 
         //@ts-ignore
-        delete docObj.filename;
+        delete doc.filename
 
-        // Populate createdBy and associatedUsers
-        await doc.populate('createdBy', 'email name');
-        await doc.populate('associatedUsers', 'email name');
+        return { ...doc, link }
+      })
 
-        return { ...docObj, link, createdBy: doc.createdBy, associatedUsers: doc.associatedUsers };
-      }));
+      const totalDocuments = await DocumentModel.countDocuments(searchQuery)
+      const totalPages = Math.ceil(totalDocuments / options.limit)
 
       return res.status(200).json({
         success: true,
         data: documentsWithLinks,
-        totalPages: documents.totalPages,
-        currentPage: documents.currentPage,
-        total: documents.total,
-        limit: documents.limit,
+        totalPages,
+        currentPage: options.page,
+        total: totalDocuments,
+        limit: options.limit,
       })
     }
   } catch (error) {
     res
       .status(500)
-      .json({ success: false, message: 'Error retrieving documents', error });
+      .json({ success: false, message: 'Error retrieving documents', error })
   }
-};
+}
 
 // POST /api/documents
 export const createDocument = async (req: any, res: Response) => {
-  const { title, associatedUsers } = req.body;
-  const user = req.user;
+  const { title, associatedUsers } = req.body
+  const user = req.user
 
-  let filename: string | undefined = req.file?.filename;
+  let filename: string | undefined = req.file?.filename
   try {
     if (!filename) {
       return res
         .status(400)
-        .json({ success: false, message: 'Error creating document', error: "filename not found" });
+        .json({
+          success: false,
+          message: 'Error creating document',
+          error: 'filename not found',
+        })
     }
-    const newDocument = new DocumentModel({ 
-      title, 
-      filename, 
+    const newDocument = new DocumentModel({
+      title,
+      filename,
       createdBy: user.id,
-      associatedUsers: associatedUsers || []
-    });
-    await newDocument.save();
-    const savedDoc = await newDocument.populate('createdBy', 'email name');
-    await savedDoc.populate('associatedUsers', 'email name');
-    const savedDocObj = savedDoc.toObject();
+      associatedUsers: associatedUsers || [],
+    })
+    await newDocument.save()
+    const savedDoc = await newDocument.populate('createdBy', 'email name')
+    await savedDoc.populate('associatedUsers', 'email name')
+    const savedDocObj = savedDoc.toObject()
 
     const link = savedDocObj.filename
       ? `http://localhost:9091/documents/data/${savedDocObj.filename}`
-      : null;
+      : null
     //@ts-ignore
-    delete savedDocObj.filename;
-    
-    res.status(201).json({ success: true, data: {...savedDocObj, link} });
+    delete savedDocObj.filename
+
+    res.status(201).json({ success: true, data: { ...savedDocObj, link } })
   } catch (error) {
     res
       .status(500)
-      .json({ success: false, message: 'Error creating document', error });
+      .json({ success: false, message: 'Error creating document', error })
   }
-};
+}
 
 // PUT /api/documents/:id
 export const updateDocument = async (req: any, res: Response) => {
-  const { id } = req.params;
-  const { title, associatedUsers } = req.body;
-  const user = req.user;
+  const { id } = req.params
+  const { title, associatedUsers } = req.body
+  const user = req.user
 
-  let filename: string | undefined = req.file?.filename;
+  let filename: string | undefined = req.file?.filename
 
   try {
-    const document = await DocumentModel.findById(id);
+    const document = await DocumentModel.findById(id)
 
     if (!document) {
       return res
         .status(404)
-        .json({ success: false, message: 'Document not found' });
+        .json({ success: false, message: 'Document not found' })
     }
 
     if (document.createdBy.toString() !== user.id) {
       return res
         .status(403)
-        .json({ success: false, message: 'Unauthorized to update this document' });
+        .json({
+          success: false,
+          message: 'Unauthorized to update this document',
+        })
     }
 
     if (title) {
-      document.title = title;
+      document.title = title
     }
 
     if (filename) {
-      document.filename = filename;
+      document.filename = filename
     }
 
     if (associatedUsers) {
-      document.associatedUsers = associatedUsers;
+      document.associatedUsers = associatedUsers
     }
 
-    await document.save();
-    await document.populate('createdBy', 'email name');
-    await document.populate('associatedUsers', 'email name');
-    const updatedDoc = document.toObject();
+    await document.save()
+    await document.populate('createdBy', 'email name')
+    await document.populate('associatedUsers', 'email name')
+    const updatedDoc = document.toObject()
     const link = updatedDoc.filename
       ? `http://localhost:9091/documents/data/${updatedDoc.filename}`
-      : null;
+      : null
 
     //@ts-ignore
-    delete updatedDoc.filename;
+    delete updatedDoc.filename
 
-    res.status(200).json({ success: true, data: { ...updatedDoc, link } });
+    res.status(200).json({ success: true, data: { ...updatedDoc, link } })
   } catch (error) {
     res
       .status(500)
-      .json({ success: false, message: 'Error updating document', error });
+      .json({ success: false, message: 'Error updating document', error })
   }
-};
+}
 
 // DELETE /api/documents/:id
 export const deleteDocument = async (req: Request, res: Response) => {
@@ -734,12 +829,10 @@ export const createCaregiver = async (
     // Check if a caregiver profile already exists for the user
     const existingProfile = await Caregiver.findOne({ userId })
     if (existingProfile) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: 'Caregiver profile already exists for this user',
-        })
+      return res.status(400).json({
+        success: false,
+        message: 'Caregiver profile already exists for this user',
+      })
     }
 
     // Create a new Caregiver profile
@@ -837,13 +930,13 @@ export const updateCaregiverById = async (
       ...req.body,
     }).populate('documents')
     if (!caregiver) {
-    // Create a new Caregiver profile
-    const newCaregiver = new Caregiver({
-      userId: userId,
-      ...req.body,
-    })
-    await newCaregiver.save()
-    return res.status(200).json({ success: true, data: null })
+      // Create a new Caregiver profile
+      const newCaregiver = new Caregiver({
+        userId: userId,
+        ...req.body,
+      })
+      await newCaregiver.save()
+      return res.status(200).json({ success: true, data: null })
     }
     return res.status(200).json({ success: true, data: null })
   } catch (error) {
