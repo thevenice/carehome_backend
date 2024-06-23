@@ -658,7 +658,7 @@ export const getDocuments = async (req: Request, res: Response) => {
 
         //@ts-ignore
         delete doc.filename
-
+        doc.createdBy = doc.createdBy[0]
         return { ...doc, link }
       })
 
