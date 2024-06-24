@@ -94,12 +94,18 @@ export const usersDocuments = multer({
     fileSize: 1024 * 1024 * 5 // Limit file size to 5MB
   },
   fileFilter: function (req: any, file: any, cb: any) {
-    // Allow specific document file types (e.g., PDF, DOCX, TXT)
-    const allowedMimeTypes = ['application/pdf', 'application/msword', 'text/plain'];
+    // Allow specific document and image file types (e.g., PDF, DOCX, TXT, JPEG, PNG)
+    const allowedMimeTypes = [
+      'application/pdf',
+      'application/msword',
+      'text/plain',
+      'image/jpeg',
+      'image/png'
+    ];
     if (allowedMimeTypes.includes(file.mimetype)) {
       return cb(null, true);
     }
-    cb(new Error('Invalid file type. Only PDF, DOCX, and TXT files are allowed.'));
+    cb(new Error('Invalid file type. Only PDF, DOCX, TXT, JPEG, and PNG files are allowed.'));
   },
 });
 
