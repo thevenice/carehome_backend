@@ -49,33 +49,33 @@ export const createDummyAdmin = async (req: Request, res: Response) => {
 
 // Get User or All Users
 export const getUser = async (req: Request, res: Response) => {
-  const { id, role, active } = req.query
-  let { page, limit } = req.query
+  const { id, role, active, search_field, search_text } = req.query;
+  let { page, limit } = req.query;
+
+  const _search_field = search_field ? search_field.toString() : '';
+  const searchParam = (!search_text) ? '' : (typeof search_text === 'string') ? search_text : (search_text)?.toString();
 
   try {
     const options = {
       page: Number(page) || 1,
       limit: Number(limit) || 10,
-    }
+    };
 
     // Default to all in one page if no pagination params are provided
     if (!page || !limit) {
-      options.page = 1
-      options.limit = 9999 // large number to get all in one page
+      options.page = 1;
+      options.limit = 9999; // large number to get all in one page
     }
 
     if (id) {
-      const user = await User.findById(id)
+      const user = await User.findById(id);
       if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, message: 'User not found' })
+        return res.status(404).json({ success: false, message: 'User not found' });
       }
 
-      // Get the path to the logo file
       const profile_picturePath = user.profile_picture
         ? `http://localhost:9091/profile_picture/data/${user.profile_picture}`
-        : null
+        : null;
 
       if (profile_picturePath) {
         try {
@@ -85,30 +85,44 @@ export const getUser = async (req: Request, res: Response) => {
               ...user.toObject(), // Convert the Mongoose document to a plain object
               profile_picture: profile_picturePath,
             },
-          })
+          });
         } catch (err) {
           return res.status(500).json({
             success: false,
-            message: 'Error reading logo file',
+            message: 'Error reading profile picture file',
             error: err,
-          })
+          });
         }
       } else {
-        // If there's no logo path, return the user info without the logo
         return res.status(200).json({
           success: true,
           data: user.toObject(),
-        })
+        });
       }
     } else {
-      const query: any = {}
+      const query: any = {};
       if (role) {
-        query.role = role
+        query.role = role;
       }
       if (active) {
-        query.active = active
+        query.active = active;
       }
-      const result = await paginate(User, query, options.page, options.limit)
+
+      if (_search_field && search_text) {
+        switch (_search_field.toLowerCase()) {
+          case 'email':
+            query['email'] = { $regex: new RegExp(searchParam, 'i') };
+            break;
+          case 'name':
+            query['name'] = { $regex: new RegExp(searchParam, 'i') };
+            break;
+          default:
+            return res.status(400).json({ success: false, message: 'Invalid search field' });
+        }
+      }
+
+      const result = await paginate(User, query, options.page, options.limit);
+
       return res.status(200).json({
         success: true,
         data: result.docs,
@@ -116,15 +130,14 @@ export const getUser = async (req: Request, res: Response) => {
         currentPage: result.currentPage,
         total: result.total,
         limit: result.limit,
-      })
+      });
     }
   } catch (error) {
-    console.error('Error retrieving users', error)
-    return res
-      .status(500)
-      .json({ success: false, message: 'Error retrieving users', error })
+    console.error('Error retrieving users', error);
+    return res.status(500).json({ success: false, message: 'Error retrieving users', error });
   }
-}
+};
+
 
 // Create User
 export const createUser = async (req: Request, res: Response) => {
