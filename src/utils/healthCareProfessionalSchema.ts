@@ -48,3 +48,5 @@ export const updateHealthCareProfessionalSchema = Joi.object({
   certifications: Joi.array().items(Joi.string()).optional(),
   documents: Joi.array().items(Joi.string()).optional(),
 });
+
+

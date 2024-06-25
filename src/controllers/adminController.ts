@@ -19,6 +19,8 @@ import DocumentModel from '../models/DocumentModel'
 import { paginate } from '../utils/helper'
 import Caregiver from '../models/CaregiverModel'
 import mongoose, { Types } from 'mongoose'
+import Resident from '../models/ResidentModel'
+import { createResidentSchema, updateResidentSchema } from '../utils/residentValidationSchema'
 
 export const createDummyAdmin = async (req: Request, res: Response) => {
   try {
@@ -980,3 +982,178 @@ export const deleteCaregiverById = async (
       .json({ success: false, message: 'Error deleting Caregiver', error })
   }
 }
+
+// Get Resident or All Residents with search functionality
+export const getResident = async (req: Request, res: Response): Promise<Response> => {
+  const { userId, search } = req.query;
+  let { page, limit } = req.query;
+
+  try {
+    const options = {
+      page: Number(page) || 1,
+      limit: Number(limit) || 10,
+    };
+
+    // Default to all in one page if no pagination params are provided
+    if (!page || !limit) {
+      options.page = 1;
+      options.limit = 9999; // large number to get all in one page
+    }
+
+    if (userId) {
+      const resident = await Resident.findOne({ userId: userId }).populate('documents');
+      if (!resident) {
+        return res.status(404).json({ success: false, message: 'Resident not found' });
+      }
+      return res.status(200).json({ success: true, data: resident });
+    } else {
+      let query = {};
+      
+      if (search) {
+        query = {
+          $or: [
+            { 'userId.name': { $regex: search, $options: 'i' } },
+            { roomNumber: { $regex: search, $options: 'i' } },
+            { 'userId.email': { $regex: search, $options: 'i' } },
+            { primaryDiagnosis: { $regex: search, $options: 'i' } },
+            { secondaryDiagnoses: { $regex: search, $options: 'i' } },
+          ],
+        };
+      }
+
+      const result = await paginate(
+        Resident,
+        query,
+        options.page,
+        options.limit,
+        { path: 'userId', select: 'name email' }
+      );
+
+      return res.status(200).json({
+        success: true,
+        data: result.docs,
+        totalPages: result.totalPages,
+        currentPage: result.currentPage,
+        total: result.total,
+        limit: result.limit,
+      });
+    }
+  } catch (error) {
+    console.error('Error retrieving Residents', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error retrieving Residents',
+      error,
+    });
+  }
+};
+
+// Create Resident
+export const createResident = async (req: Request, res: Response) => {
+  const { error } = createResidentSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ success: false, message: error.details[0].message });
+  }
+
+  const userId = req.body.userId;
+
+  try {
+    // Check if the user exists
+    const userExists = await User.findById(userId);
+    if (!userExists) {
+      return res.status(400).json({ success: false, message: 'User does not exist' });
+    }
+    // Check if the user role is "RESIDENT"
+    if (userExists.role !== 'RESIDENT') {
+      return res.status(400).json({
+        success: false,
+        message: 'User role is not resident',
+      });
+    }
+    // Check if a profile already exists for the user
+    const existingProfile = await Resident.findOne({ userId });
+
+    if (existingProfile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Resident profile already exists for this user',
+      });
+    }
+    // Create a new Resident profile
+    const newResident = new Resident(req.body);
+    await newResident.save();
+
+    res.status(201).json({ success: true, data: newResident });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error creating Resident',
+      error,
+    });
+  }
+};
+
+// Update Resident
+export const updateResident = async (req: Request, res: Response) => {
+  const { error } = updateResidentSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ success: false, message: error.details[0].message });
+  }
+
+  try {
+    const userId = req.params.id;
+    // Check if the user exists
+    const userExists = await User.findById(req.params.id);
+    if (!userExists) {
+      return res.status(400).json({ success: false, message: 'User does not exist' });
+    }
+    // Check if the user role is "RESIDENT"
+    if (userExists.role !== 'RESIDENT') {
+      return res.status(400).json({
+        success: false,
+        message: 'User role is not Resident',
+      });
+    }
+    const updatedResident = await Resident.findOneAndUpdate({
+      userId: userId,
+    }, req.body, { new: true });
+    
+    if (!updatedResident) {
+      // Create a new Resident profile
+      const newResident = new Resident({
+        userId: userId,
+        ...req.body,
+      });
+      await newResident.save();
+      return res.status(200).json({ success: true, data: newResident });
+    }
+    res.status(200).json({ success: true, data: updatedResident });
+  } catch (error) {
+    console.log('error: ', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating Resident',
+      error,
+    });
+  }
+};
+
+// Delete Resident
+export const deleteResident = async (req: Request, res: Response) => {
+  try {
+    const deletedResident = await Resident.findByIdAndDelete(req.params.id);
+    if (!deletedResident) {
+      return res.status(404).json({ success: false, message: 'Resident not found' });
+    }
+    res.status(200).json({
+      success: true,
+      message: 'Resident deleted successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting Resident',
+      error,
+    });
+  }
+};

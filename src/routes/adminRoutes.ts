@@ -60,6 +60,12 @@ router.post('/healthcare-professionals', adminController.createHealthCareProfess
 router.put('/healthcare-professionals/:id', adminController.updateHealthCareProfessional);
 router.delete('/healthcare-professionals/:id', adminController.deleteHealthCareProfessional);
 
+// residents APIs
+router.get('/residents', adminController.getResident);
+router.post('/residents', adminController.createResident);
+router.put('/residents/:id', adminController.updateResident);
+router.delete('/residents/:id', adminController.deleteResident);
+
 // care giver APIs
 router.post('/caregivers', adminController.createCaregiver);
 router.get('/caregivers', adminController.getCaregiver);
