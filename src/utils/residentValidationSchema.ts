@@ -1,12 +1,14 @@
 import Joi from 'joi';
 
 const careNoteSchema = Joi.object({
+    _id: Joi.string().optional(),
     date: Joi.date().required(),
     note: Joi.string().required(),
     author: Joi.string().required(), // This should be a valid ObjectId string
   });
 
 const emergencyContactSchema = Joi.object({
+  _id: Joi.string().optional(),
   name: Joi.string().required(),
   relationship: Joi.string().required(),
   phoneNumber: Joi.string().required(),
@@ -14,6 +16,7 @@ const emergencyContactSchema = Joi.object({
 });
 
 const medicationSchema = Joi.object({
+  _id: Joi.string().optional(),
   name: Joi.string().required(),
   dosage: Joi.string().required(),
   frequency: Joi.string().required(),
