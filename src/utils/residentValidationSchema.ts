@@ -1,11 +1,11 @@
-import Joi from 'joi';
+import Joi from 'joi'
 
 const careNoteSchema = Joi.object({
-    _id: Joi.string().optional(),
-    date: Joi.date().required(),
-    note: Joi.string().required(),
-    author: Joi.string().required(), // This should be a valid ObjectId string
-  });
+  _id: Joi.string().optional(),
+  date: Joi.date().required(),
+  note: Joi.string().required(),
+  author: Joi.string().required(), // This should be a valid ObjectId string
+})
 
 const emergencyContactSchema = Joi.object({
   _id: Joi.string().optional(),
@@ -13,7 +13,7 @@ const emergencyContactSchema = Joi.object({
   relationship: Joi.string().required(),
   phoneNumber: Joi.string().required(),
   email: Joi.string().email().required(),
-});
+})
 
 const medicationSchema = Joi.object({
   _id: Joi.string().optional(),
@@ -22,7 +22,7 @@ const medicationSchema = Joi.object({
   frequency: Joi.string().required(),
   startDate: Joi.date().required(),
   endDate: Joi.date().optional(),
-});
+})
 
 const baseResidentSchema = {
   userId: Joi.string().required(),
@@ -60,12 +60,12 @@ const baseResidentSchema = {
   }),
   documents: Joi.array().items(Joi.string()),
   careNotes: Joi.array().items(careNoteSchema),
-};
+}
 
 export const createResidentSchema = Joi.object({
   ...baseResidentSchema,
-});
+})
 
 export const updateResidentSchema = Joi.object({
   ...baseResidentSchema,
-}).fork(Object.keys(baseResidentSchema), (schema) => schema.optional());
+}).fork(Object.keys(baseResidentSchema), (schema) => schema.optional())

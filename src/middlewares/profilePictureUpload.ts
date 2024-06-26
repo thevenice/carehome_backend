@@ -91,7 +91,7 @@ export const careHomeLogo = multer({
 export const usersDocuments = multer({
   storage: usersDocumentStorage, // storage configuration
   limits: {
-    fileSize: 1024 * 1024 * 5 // Limit file size to 5MB
+    fileSize: 1024 * 1024 * 5, // Limit file size to 5MB
   },
   fileFilter: function (req: any, file: any, cb: any) {
     // Allow specific document and image file types (e.g., PDF, DOCX, TXT, JPEG, PNG)
@@ -100,15 +100,18 @@ export const usersDocuments = multer({
       'application/msword',
       'text/plain',
       'image/jpeg',
-      'image/png'
-    ];
+      'image/png',
+    ]
     if (allowedMimeTypes.includes(file.mimetype)) {
-      return cb(null, true);
+      return cb(null, true)
     }
-    cb(new Error('Invalid file type. Only PDF, DOCX, TXT, JPEG, and PNG files are allowed.'));
+    cb(
+      new Error(
+        'Invalid file type. Only PDF, DOCX, TXT, JPEG, and PNG files are allowed.',
+      ),
+    )
   },
-});
-
+})
 
 // export const s3: any = new aws.S3({
 //   endpoint: spacesEndpoint,

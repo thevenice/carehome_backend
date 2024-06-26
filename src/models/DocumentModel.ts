@@ -1,11 +1,11 @@
-import mongoose, { Schema, Document, Model, Types } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose'
 
 export interface IDocument extends Document {
-  title: string;
-  filename: string; // filename or path to the document
-  uploadedAt: Date;
-  createdBy: Types.ObjectId;
-  associatedUsers?: [Types.ObjectId];
+  title: string
+  filename: string // filename or path to the document
+  uploadedAt: Date
+  createdBy: Types.ObjectId
+  associatedUsers?: [Types.ObjectId]
 }
 
 const documentSchema = new Schema<IDocument>(
@@ -27,17 +27,22 @@ const documentSchema = new Schema<IDocument>(
       ref: 'User',
       required: false,
     },
-    associatedUsers: [{
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    }],
+    associatedUsers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+      },
+    ],
   },
   {
     timestamps: false,
-  }
-);
+  },
+)
 
-const DocumentModel: Model<IDocument> = mongoose.model<IDocument>('Document', documentSchema);
+const DocumentModel: Model<IDocument> = mongoose.model<IDocument>(
+  'Document',
+  documentSchema,
+)
 
-export default DocumentModel;
+export default DocumentModel

@@ -1,30 +1,30 @@
-import mongoose, { Schema, Document, Model, Types } from 'mongoose';
-import DocumentModel, { IDocument } from './DocumentModel';
-import User, { IUser } from './UserModel';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose'
+import DocumentModel, { IDocument } from './DocumentModel'
+import User, { IUser } from './UserModel'
 
 export interface IHealthCareProfessional extends Document {
-  userId: Types.ObjectId;
-  contactNumber: string;
-  address: string;
-  specialization: string;
-  licenseNumber: string;
-  yearsOfExperience: number;
-  qualifications: string[];
-  skills: string[];
+  userId: Types.ObjectId
+  contactNumber: string
+  address: string
+  specialization: string
+  licenseNumber: string
+  yearsOfExperience: number
+  qualifications: string[]
+  skills: string[]
   availability: {
-    days: string[];
-    timeSlots: string[];
-  };
-  preferredShifts: string[];
-  workLocationPreferences: string[];
+    days: string[]
+    timeSlots: string[]
+  }
+  preferredShifts: string[]
+  workLocationPreferences: string[]
   emergencyContact: {
-    name: string;
-    relationship: string;
-    phoneNumber: string;
-  };
-  languagesSpoken: string[];
-  certifications: string[];
-  documents: Types.ObjectId[];
+    name: string
+    relationship: string
+    phoneNumber: string
+  }
+  languagesSpoken: string[]
+  certifications: string[]
+  documents: Types.ObjectId[]
 }
 
 const healthCareProfessionalSchema = new Schema(
@@ -102,17 +102,23 @@ const healthCareProfessionalSchema = new Schema(
       type: [String],
       required: true,
     },
-    documents: [{
-      type: Schema.Types.ObjectId,
-      ref: 'Document',
-      required: false,
-    }],
+    documents: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Document',
+        required: false,
+      },
+    ],
   },
   {
     timestamps: true,
-  }
-);
+  },
+)
 
-const HealthCareProfessional: Model<IHealthCareProfessional> = mongoose.model<IHealthCareProfessional>('HealthCareProfessional', healthCareProfessionalSchema);
+const HealthCareProfessional: Model<IHealthCareProfessional> =
+  mongoose.model<IHealthCareProfessional>(
+    'HealthCareProfessional',
+    healthCareProfessionalSchema,
+  )
 
-export default HealthCareProfessional;
+export default HealthCareProfessional

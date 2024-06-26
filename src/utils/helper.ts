@@ -43,33 +43,36 @@ export const paginate = async (
   query: any,
   page: number,
   limit: number,
-  populateOptions?: any
+  populateOptions?: any,
 ) => {
-  const pageNum: number = page || 1;
-  const limitNum: number = limit || 10;
-  
-  let resultsQuery = model.find(query).skip((pageNum - 1) * limitNum).limit(limitNum);
-  
-  const total = await model.countDocuments(query);
+  const pageNum: number = page || 1
+  const limitNum: number = limit || 10
+
+  let resultsQuery = model
+    .find(query)
+    .skip((pageNum - 1) * limitNum)
+    .limit(limitNum)
+
+  const total = await model.countDocuments(query)
 
   // Check if 'documents' field exists in the model schema
-  const schema = model.schema.obj;
+  const schema = model.schema.obj
   if (schema.hasOwnProperty('documents')) {
-    resultsQuery = resultsQuery.populate('documents');
+    resultsQuery = resultsQuery.populate('documents')
   }
 
   // Apply additional populate options if provided
   if (populateOptions) {
-    resultsQuery = resultsQuery.populate(populateOptions);
+    resultsQuery = resultsQuery.populate(populateOptions)
   }
 
-  const results = await resultsQuery;
+  const results = await resultsQuery
 
   return {
     docs: results,
     totalPages: Math.ceil(total / limitNum),
     currentPage: pageNum,
     total: total,
-    limit: limitNum
-  };
-};
+    limit: limitNum,
+  }
+}

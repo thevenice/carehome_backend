@@ -20,7 +20,10 @@ import { paginate } from '../utils/helper'
 import Caregiver from '../models/CaregiverModel'
 import mongoose, { Types } from 'mongoose'
 import Resident from '../models/ResidentModel'
-import { createResidentSchema, updateResidentSchema } from '../utils/residentValidationSchema'
+import {
+  createResidentSchema,
+  updateResidentSchema,
+} from '../utils/residentValidationSchema'
 
 export const createDummyAdmin = async (req: Request, res: Response) => {
   try {
@@ -51,33 +54,39 @@ export const createDummyAdmin = async (req: Request, res: Response) => {
 
 // Get User or All Users
 export const getUser = async (req: Request, res: Response) => {
-  const { id, role, active, search_field, search_text } = req.query;
-  let { page, limit } = req.query;
+  const { id, role, active, search_field, search_text } = req.query
+  let { page, limit } = req.query
 
-  const _search_field = search_field ? search_field.toString() : '';
-  const searchParam = (!search_text) ? '' : (typeof search_text === 'string') ? search_text : (search_text)?.toString();
+  const _search_field = search_field ? search_field.toString() : ''
+  const searchParam = !search_text
+    ? ''
+    : typeof search_text === 'string'
+      ? search_text
+      : search_text?.toString()
 
   try {
     const options = {
       page: Number(page) || 1,
       limit: Number(limit) || 10,
-    };
+    }
 
     // Default to all in one page if no pagination params are provided
     if (!page || !limit) {
-      options.page = 1;
-      options.limit = 9999; // large number to get all in one page
+      options.page = 1
+      options.limit = 9999 // large number to get all in one page
     }
 
     if (id) {
-      const user = await User.findById(id);
+      const user = await User.findById(id)
       if (!user) {
-        return res.status(404).json({ success: false, message: 'User not found' });
+        return res
+          .status(404)
+          .json({ success: false, message: 'User not found' })
       }
 
       const profile_picturePath = user.profile_picture
         ? `http://localhost:9091/profile_picture/data/${user.profile_picture}`
-        : null;
+        : null
 
       if (profile_picturePath) {
         try {
@@ -87,43 +96,45 @@ export const getUser = async (req: Request, res: Response) => {
               ...user.toObject(), // Convert the Mongoose document to a plain object
               profile_picture: profile_picturePath,
             },
-          });
+          })
         } catch (err) {
           return res.status(500).json({
             success: false,
             message: 'Error reading profile picture file',
             error: err,
-          });
+          })
         }
       } else {
         return res.status(200).json({
           success: true,
           data: user.toObject(),
-        });
+        })
       }
     } else {
-      const query: any = {};
+      const query: any = {}
       if (role) {
-        query.role = role;
+        query.role = role
       }
       if (active) {
-        query.active = active;
+        query.active = active
       }
 
       if (_search_field && search_text) {
         switch (_search_field.toLowerCase()) {
           case 'email':
-            query['email'] = { $regex: new RegExp(searchParam, 'i') };
-            break;
+            query['email'] = { $regex: new RegExp(searchParam, 'i') }
+            break
           case 'name':
-            query['name'] = { $regex: new RegExp(searchParam, 'i') };
-            break;
+            query['name'] = { $regex: new RegExp(searchParam, 'i') }
+            break
           default:
-            return res.status(400).json({ success: false, message: 'Invalid search field' });
+            return res
+              .status(400)
+              .json({ success: false, message: 'Invalid search field' })
         }
       }
 
-      const result = await paginate(User, query, options.page, options.limit);
+      const result = await paginate(User, query, options.page, options.limit)
 
       return res.status(200).json({
         success: true,
@@ -132,14 +143,15 @@ export const getUser = async (req: Request, res: Response) => {
         currentPage: result.currentPage,
         total: result.total,
         limit: result.limit,
-      });
+      })
     }
   } catch (error) {
-    console.error('Error retrieving users', error);
-    return res.status(500).json({ success: false, message: 'Error retrieving users', error });
+    console.error('Error retrieving users', error)
+    return res
+      .status(500)
+      .json({ success: false, message: 'Error retrieving users', error })
   }
-};
-
+}
 
 // Create User
 export const createUser = async (req: Request, res: Response) => {
@@ -465,12 +477,10 @@ export const updateHealthCareProfessional = async (
     }
     // Check if the user role is "HealthCareProfessional"
     if (userExists.role !== 'HEALTHCARE_PROFESSIONAL') {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: 'User role is not HealthCareProfessional',
-        })
+      return res.status(400).json({
+        success: false,
+        message: 'User role is not HealthCareProfessional',
+      })
     }
     const updatedHealthCareProfessional =
       await HealthCareProfessional.findOneAndUpdate({
@@ -704,13 +714,11 @@ export const createDocument = async (req: any, res: Response) => {
   let filename: string | undefined = req.file?.filename
   try {
     if (!filename) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: 'Error creating document',
-          error: 'filename not found',
-        })
+      return res.status(400).json({
+        success: false,
+        message: 'Error creating document',
+        error: 'filename not found',
+      })
     }
     const newDocument = new DocumentModel({
       title,
@@ -755,12 +763,10 @@ export const updateDocument = async (req: any, res: Response) => {
     }
 
     if (document.createdBy.toString() !== user.id) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: 'Unauthorized to update this document',
-        })
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized to update this document',
+      })
     }
 
     if (title) {
@@ -984,31 +990,38 @@ export const deleteCaregiverById = async (
 }
 
 // Get Resident or All Residents with search functionality
-export const getResident = async (req: Request, res: Response): Promise<Response> => {
-  const { userId, search } = req.query;
-  let { page, limit } = req.query;
+export const getResident = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
+  const { userId, search } = req.query
+  let { page, limit } = req.query
 
   try {
     const options = {
       page: Number(page) || 1,
       limit: Number(limit) || 10,
-    };
+    }
 
     // Default to all in one page if no pagination params are provided
     if (!page || !limit) {
-      options.page = 1;
-      options.limit = 9999; // large number to get all in one page
+      options.page = 1
+      options.limit = 9999 // large number to get all in one page
     }
 
     if (userId) {
-      const resident = await Resident.findOne({ userId: userId }).populate('documents');
+      const resident = await Resident.findOne({ userId: userId }).populate(
+        'documents',
+      )
       if (!resident) {
-        return res.status(404).json({ success: false, message: 'Resident not found' });
+        return res
+          .status(404)
+          .json({ success: false, message: 'Resident not found' })
       }
-      return res.status(200).json({ success: true, data: resident });
+      return res.status(200).json({ success: true, data: resident })
     } else {
-      let query = {};
-      
+      let query = {}
+
       if (search) {
         query = {
           $or: [
@@ -1018,7 +1031,7 @@ export const getResident = async (req: Request, res: Response): Promise<Response
             { primaryDiagnosis: { $regex: search, $options: 'i' } },
             { secondaryDiagnoses: { $regex: search, $options: 'i' } },
           ],
-        };
+        }
       }
 
       const result = await paginate(
@@ -1026,8 +1039,8 @@ export const getResident = async (req: Request, res: Response): Promise<Response
         query,
         options.page,
         options.limit,
-        { path: 'userId', select: 'name email' }
-      );
+        { path: 'userId', select: 'name email' },
+      )
 
       return res.status(200).json({
         success: true,
@@ -1036,124 +1049,138 @@ export const getResident = async (req: Request, res: Response): Promise<Response
         currentPage: result.currentPage,
         total: result.total,
         limit: result.limit,
-      });
+      })
     }
   } catch (error) {
-    console.error('Error retrieving Residents', error);
+    console.error('Error retrieving Residents', error)
     return res.status(500).json({
       success: false,
       message: 'Error retrieving Residents',
       error,
-    });
+    })
   }
-};
+}
 
 // Create Resident
 export const createResident = async (req: Request, res: Response) => {
-  const { error } = createResidentSchema.validate(req.body);
+  const { error } = createResidentSchema.validate(req.body)
   if (error) {
-    return res.status(400).json({ success: false, message: error.details[0].message });
+    return res
+      .status(400)
+      .json({ success: false, message: error.details[0].message })
   }
 
-  const userId = req.body.userId;
+  const userId = req.body.userId
 
   try {
     // Check if the user exists
-    const userExists = await User.findById(userId);
+    const userExists = await User.findById(userId)
     if (!userExists) {
-      return res.status(400).json({ success: false, message: 'User does not exist' });
+      return res
+        .status(400)
+        .json({ success: false, message: 'User does not exist' })
     }
     // Check if the user role is "RESIDENT"
     if (userExists.role !== 'RESIDENT') {
       return res.status(400).json({
         success: false,
         message: 'User role is not resident',
-      });
+      })
     }
     // Check if a profile already exists for the user
-    const existingProfile = await Resident.findOne({ userId });
+    const existingProfile = await Resident.findOne({ userId })
 
     if (existingProfile) {
       return res.status(400).json({
         success: false,
         message: 'Resident profile already exists for this user',
-      });
+      })
     }
     // Create a new Resident profile
-    const newResident = new Resident(req.body);
-    await newResident.save();
+    const newResident = new Resident(req.body)
+    await newResident.save()
 
-    res.status(201).json({ success: true, data: newResident });
+    res.status(201).json({ success: true, data: newResident })
   } catch (error) {
     res.status(500).json({
       success: false,
       message: 'Error creating Resident',
       error,
-    });
+    })
   }
-};
+}
 
 // Update Resident
 export const updateResident = async (req: Request, res: Response) => {
-  const { error } = updateResidentSchema.validate(req.body);
+  const { error } = updateResidentSchema.validate(req.body)
   if (error) {
-    return res.status(400).json({ success: false, message: error.details[0].message });
+    return res
+      .status(400)
+      .json({ success: false, message: error.details[0].message })
   }
 
   try {
-    const userId = req.params.id;
+    const userId = req.params.id
     // Check if the user exists
-    const userExists = await User.findById(req.params.id);
+    const userExists = await User.findById(req.params.id)
     if (!userExists) {
-      return res.status(400).json({ success: false, message: 'User does not exist' });
+      return res
+        .status(400)
+        .json({ success: false, message: 'User does not exist' })
     }
     // Check if the user role is "RESIDENT"
     if (userExists.role !== 'RESIDENT') {
       return res.status(400).json({
         success: false,
         message: 'User role is not Resident',
-      });
+      })
     }
-    const updatedResident = await Resident.findOneAndUpdate({
-      userId: userId,
-    }, req.body, { new: true });
-    
+    const updatedResident = await Resident.findOneAndUpdate(
+      {
+        userId: userId,
+      },
+      req.body,
+      { new: true },
+    )
+
     if (!updatedResident) {
       // Create a new Resident profile
       const newResident = new Resident({
         userId: userId,
         ...req.body,
-      });
-      await newResident.save();
-      return res.status(200).json({ success: true, data: newResident });
+      })
+      await newResident.save()
+      return res.status(200).json({ success: true, data: newResident })
     }
-    res.status(200).json({ success: true, data: updatedResident });
+    res.status(200).json({ success: true, data: updatedResident })
   } catch (error) {
-    console.log('error: ', error);
+    console.log('error: ', error)
     res.status(500).json({
       success: false,
       message: 'Error updating Resident',
       error,
-    });
+    })
   }
-};
+}
 
 // Delete Resident
 export const deleteResident = async (req: Request, res: Response) => {
   try {
-    const deletedResident = await Resident.findByIdAndDelete(req.params.id);
+    const deletedResident = await Resident.findByIdAndDelete(req.params.id)
     if (!deletedResident) {
-      return res.status(404).json({ success: false, message: 'Resident not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: 'Resident not found' })
     }
     res.status(200).json({
       success: true,
       message: 'Resident deleted successfully',
-    });
+    })
   } catch (error) {
     res.status(500).json({
       success: false,
       message: 'Error deleting Resident',
       error,
-    });
+    })
   }
-};
+}

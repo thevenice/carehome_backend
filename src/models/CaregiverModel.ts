@@ -1,32 +1,32 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
-import { IUser } from './UserModel';
-import { IDocument } from './DocumentModel';
+import mongoose, { Schema, Document, Model } from 'mongoose'
+import { IUser } from './UserModel'
+import { IDocument } from './DocumentModel'
 
 export interface ICaregiver extends Document {
-  userId: mongoose.Schema.Types.ObjectId; // Reference to the User model
-  contactNumber: string;
-  address: string;
-  specialization: string;
-  licenseNumber: string;
-  yearsOfExperience: number;
-  qualifications: string[];
-  skills: string[];
+  userId: mongoose.Schema.Types.ObjectId // Reference to the User model
+  contactNumber: string
+  address: string
+  specialization: string
+  licenseNumber: string
+  yearsOfExperience: number
+  qualifications: string[]
+  skills: string[]
   availability: {
-    days: string[]; // e.g., ["Monday", "Wednesday", "Friday"]
-    timeSlots: string[]; // e.g., ["09:00-12:00", "13:00-16:00"]
-  };
-  preferredShifts: string[]; // e.g., ["Morning", "Night"]
-  workLocationPreferences: string[];
+    days: string[] // e.g., ["Monday", "Wednesday", "Friday"]
+    timeSlots: string[] // e.g., ["09:00-12:00", "13:00-16:00"]
+  }
+  preferredShifts: string[] // e.g., ["Morning", "Night"]
+  workLocationPreferences: string[]
   emergencyContact: {
-    name: string;
-    relationship: string;
-    phoneNumber: string;
-  };
-  languagesSpoken: string[];
-  certifications: string[];
-  documents: mongoose.Schema.Types.ObjectId[]; // Array of document IDs referencing Document model
-  createdAt: Date;
-  updatedAt: Date;
+    name: string
+    relationship: string
+    phoneNumber: string
+  }
+  languagesSpoken: string[]
+  certifications: string[]
+  documents: mongoose.Schema.Types.ObjectId[] // Array of document IDs referencing Document model
+  createdAt: Date
+  updatedAt: Date
 }
 
 const caregiverSchema = new Schema<ICaregiver>(
@@ -113,9 +113,12 @@ const caregiverSchema = new Schema<ICaregiver>(
   },
   {
     timestamps: true, // Automatically manage createdAt and updatedAt fields
-  }
-);
+  },
+)
 
-const Caregiver: Model<ICaregiver> = mongoose.model<ICaregiver>('Caregiver', caregiverSchema);
+const Caregiver: Model<ICaregiver> = mongoose.model<ICaregiver>(
+  'Caregiver',
+  caregiverSchema,
+)
 
-export default Caregiver;
+export default Caregiver
