@@ -1349,13 +1349,14 @@ export const updateInterviewCandidate = async (req: Request, res: Response) => {
       })
     }
     let filename: string | undefined = req.file?.filename
-    if (!filename) {
+    if (req.file){
+      if (!filename) {
       return res.status(400).json({
         success: false,
         message: 'Error creating document',
         error: 'Reupload Resume file',
       })
-    }
+    }}
     const resumeUrl = filename
     ? `http://localhost:9091/documents/data/${filename}`
     : null
