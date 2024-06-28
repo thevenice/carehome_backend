@@ -87,4 +87,28 @@ router.get('/caregivers', adminController.getCaregiver)
 router.put('/caregivers/:id', adminController.updateCaregiverById)
 router.delete('/caregivers/:id', adminController.deleteCaregiverById)
 
+
+// Interview Candidate APIs
+router.get(
+  '/interview-candidates',
+  adminController.getInterviewCandidate
+)
+
+router.post(
+  '/interview-candidates',
+  [usersDocuments.single('file'), bodyParserFormData],
+  adminController.createInterviewCandidate
+)
+
+router.put(
+  '/interview-candidates/:id',
+  [usersDocuments.single('file'), bodyParserFormData],
+  adminController.updateInterviewCandidate
+)
+
+router.delete(
+  '/interview-candidates/:id',
+  adminController.deleteInterviewCandidate
+)
+
 export default router

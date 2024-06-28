@@ -24,6 +24,9 @@ import {
   createResidentSchema,
   updateResidentSchema,
 } from '../utils/residentValidationSchema'
+import { createInterviewCandidateSchema, updateInterviewCandidateSchema } from '../utils/InterviewCandidateSchema'
+import InterviewCandidateModel from '../models/InterviewCandidateModel'
+import InterviewCandidate from '../models/InterviewCandidateModel'
 
 export const createDummyAdmin = async (req: Request, res: Response) => {
   try {
@@ -1180,6 +1183,231 @@ export const deleteResident = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Error deleting Resident',
+      error,
+    })
+  }
+}
+
+// Get InterviewCandidate or All InterviewCandidates with search functionality
+export const getInterviewCandidate = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { userId, search } = req.query
+  let { page, limit } = req.query
+
+  try {
+    const options = {
+      page: Number(page) || 1,
+      limit: Number(limit) || 10,
+    }
+
+    // Default to all in one page if no pagination params are provided
+    if (!page || !limit) {
+      options.page = 1
+      options.limit = 9999 // large number to get all in one page
+    }
+
+    if (userId) {
+      const candidate = await InterviewCandidate.findOne({ userId: userId })
+      if (!candidate) {
+        return res
+          .status(404)
+          .json({ success: false, message: 'Interview candidate not found' })
+      }
+      return res.status(200).json({ success: true, data: candidate })
+    } else {
+      let query = {}
+
+      if (search) {
+        query = {
+          $or: [
+            { 'userId.name': { $regex: search, $options: 'i' } },
+            { 'userId.email': { $regex: search, $options: 'i' } },
+            { desiredPosition: { $regex: search, $options: 'i' } },
+            { skills: { $regex: search, $options: 'i' } },
+            { qualifications: { $regex: search, $options: 'i' } },
+          ],
+        }
+      }
+
+      const result = await paginate(
+        InterviewCandidate,
+        query,
+        options.page,
+        options.limit,
+        { path: 'userId', select: 'name email' }
+      )
+
+      return res.status(200).json({
+        success: true,
+        data: result.docs,
+        totalPages: result.totalPages,
+        currentPage: result.currentPage,
+        total: result.total,
+        limit: result.limit,
+      })
+    }
+  } catch (error) {
+    console.error('Error retrieving Interview Candidates', error)
+    return res.status(500).json({
+      success: false,
+      message: 'Error retrieving Interview Candidates',
+      error,
+    })
+  }
+}
+
+// Create InterviewCandidate
+export const createInterviewCandidate = async (req: Request, res: Response) => {
+  const { error } = createInterviewCandidateSchema.validate(req.body)
+  if (error) {
+    return res
+      .status(400)
+      .json({ success: false, message: error.details[0].message })
+  }
+
+  const userId = req.body.userId
+
+  try {
+    // Check if the user exists
+    const userExists = await User.findById(userId)
+    if (!userExists) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'User does not exist' })
+    }
+    // Check if the user role is "CANDIDATE"
+    if (userExists.role !== 'INTERVIEW_CANDIDATE') {
+      return res.status(400).json({
+        success: false,
+        message: 'User role is not candidate',
+      })
+    }
+    // Check if a profile already exists for the user
+    const existingProfile = await InterviewCandidateModel.findOne({ userId })
+
+    if (existingProfile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Interview candidate profile already exists for this user',
+      })
+    }
+
+    let filename: string | undefined = req.file?.filename
+    if (!filename) {
+      return res.status(400).json({
+        success: false,
+        message: 'Error creating document',
+        error: 'Reupload Resume file',
+      })
+    }
+    const resumeUrl = filename
+    ? `http://localhost:9091/documents/data/${filename}`
+    : null
+    
+    const reqData = req.body
+    reqData.resumeUrl = resumeUrl
+
+    // Create a new InterviewCandidate profile
+    const newCandidate = new InterviewCandidate(reqData)
+    await newCandidate.save()
+
+    res.status(201).json({ success: true, data: newCandidate })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error creating Interview Candidate',
+      error,
+    })
+  }
+}
+
+// Update InterviewCandidate
+export const updateInterviewCandidate = async (req: Request, res: Response) => {
+  const { error } = updateInterviewCandidateSchema.validate(req.body)
+  if (error) {
+    return res
+      .status(400)
+      .json({ success: false, message: error.details[0].message })
+  }
+
+  try {
+    const userId = req.params.id
+    // Check if the user exists
+    const userExists = await User.findById(req.params.id)
+    if (!userExists) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'User does not exist' })
+    }
+    // Check if the user role is "CANDIDATE"
+    if (userExists.role !== 'INTERVIEW_CANDIDATE') {
+      return res.status(400).json({
+        success: false,
+        message: 'User role is not Candidate',
+      })
+    }
+    let filename: string | undefined = req.file?.filename
+    if (!filename) {
+      return res.status(400).json({
+        success: false,
+        message: 'Error creating document',
+        error: 'Reupload Resume file',
+      })
+    }
+    const resumeUrl = filename
+    ? `http://localhost:9091/documents/data/${filename}`
+    : null
+    
+    const reqData = req.body
+    reqData.resumeUrl = resumeUrl
+
+    const updatedCandidate = await InterviewCandidateModel.findOneAndUpdate(
+      {
+        userId: userId,
+      },
+      reqData,
+      { new: true },
+    )
+
+    if (!updatedCandidate) {
+      // Create a new InterviewCandidate profile
+      const newCandidate = new InterviewCandidateModel({
+        userId: userId,
+        ...req.body,
+      })
+      await newCandidate.save()
+      return res.status(200).json({ success: true, data: newCandidate })
+    }
+    res.status(200).json({ success: true, data: updatedCandidate })
+  } catch (error) {
+    console.log('error: ', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error updating Interview Candidate',
+      error,
+    })
+  }
+}
+
+// Delete InterviewCandidate
+export const deleteInterviewCandidate = async (req: Request, res: Response) => {
+  try {
+    const deletedCandidate = await InterviewCandidateModel.findByIdAndDelete(req.params.id)
+    if (!deletedCandidate) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'Interview Candidate not found' })
+    }
+    res.status(200).json({
+      success: true,
+      message: 'Interview Candidate deleted successfully',
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting Interview Candidate',
       error,
     })
   }
