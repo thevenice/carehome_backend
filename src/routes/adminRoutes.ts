@@ -123,4 +123,10 @@ router.post(
   adminController.createCarePlan
 )
 
+router.put(
+  '/plans/:Id',
+  [usersDocuments.single('file'), bodyParserFormData],
+  adminController.updateCarePlan
+)
+
 export default router

@@ -43,9 +43,7 @@ export const updateCarePlanSchema = Joi.object({
   mealPlanIncluded: Joi.boolean(),
   activitiesIncluded: Joi.boolean(),
   specializedCare: Joi.array().items(Joi.string()),
-  staffingRatio: Joi.string(),
-  // availableAddOns: Joi.array().items(Joi.string()), // Assuming these are IDs of CarePlanAddons
-  minimumStayPeriod: Joi.number().integer().min(1),
+  staffingRatio: Joi.string(),  minimumStayPeriod: Joi.number().integer().min(1),
   cancellationPolicy: Joi.string(),
   isActive: Joi.boolean(),
   documentUrl: Joi.string().uri(),
