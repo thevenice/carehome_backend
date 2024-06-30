@@ -111,4 +111,16 @@ router.delete(
   adminController.deleteInterviewCandidate
 )
 
+// Plans APIs
+router.get(
+  '/plans',
+  adminController.getCarePlan
+)
+
+router.post(
+  '/plans',
+  [usersDocuments.single('file'), bodyParserFormData],
+  adminController.createCarePlan
+)
+
 export default router

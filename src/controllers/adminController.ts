@@ -27,6 +27,8 @@ import {
 import { createInterviewCandidateSchema, updateInterviewCandidateSchema } from '../utils/InterviewCandidateSchema'
 import InterviewCandidateModel from '../models/InterviewCandidateModel'
 import InterviewCandidate from '../models/InterviewCandidateModel'
+import CarePlan from '../models/CarePlanModel'
+import { createCarePlanSchema, updateCarePlanSchema } from '../utils/CarePlanSchema'
 
 export const createDummyAdmin = async (req: Request, res: Response) => {
   try {
@@ -1409,6 +1411,181 @@ export const deleteInterviewCandidate = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Error deleting Interview Candidate',
+      error,
+    })
+  }
+}
+
+// Get CarePlan or All CarePlans with search functionality
+export const getCarePlan = async (req: Request, res: Response): Promise<Response> => {
+  const { id, search } = req.query
+  let { page, limit } = req.query
+
+  try {
+    const options = {
+      page: Number(page) || 1,
+      limit: Number(limit) || 10,
+    }
+
+    // Default to all in one page if no pagination params are provided
+    if (!page || !limit) {
+      options.page = 1
+      options.limit = 9999 // large number to get all in one page
+    }
+
+    if (id) {
+      const carePlan = await CarePlan.findById(id)
+      if (!carePlan) {
+        return res.status(404).json({ success: false, message: 'Care plan not found' })
+      }
+      return res.status(200).json({ success: true, data: carePlan })
+    } else {
+      let query: any = {}
+
+      if (search) {
+        query = {
+          $or: [
+            { name: { $regex: search, $options: 'i' } },
+            { description: { $regex: search, $options: 'i' } },
+            { level: { $regex: search, $options: 'i' } },
+            { specializedCare: { $regex: search, $options: 'i' } },
+          ],
+        }
+      }
+
+      const result = await paginate(
+        CarePlan,
+        query,
+        options.page,
+        options.limit
+      )
+
+      return res.status(200).json({
+        success: true,
+        data: result.docs,
+        totalPages: result.totalPages,
+        currentPage: result.currentPage,
+        total: result.total,
+        limit: result.limit,
+      })
+    }
+  } catch (error) {
+    console.error('Error retrieving Care Plans', error)
+    return res.status(500).json({
+      success: false,
+      message: 'Error retrieving Care Plans',
+      error,
+    })
+  }
+}
+
+// Create CarePlan
+export const createCarePlan = async (req: Request, res: Response) => {
+  const { error } = createCarePlanSchema.validate(req.body)
+  if (error) {
+    return res.status(400).json({ success: false, message: error.details[0].message })
+  }
+
+  try {
+    const dataToSave:any = req.body
+    dataToSave.planPdfLink = "http://faxxx.com/fake"
+    dataToSave.featuredImageLink = "http://faxxx.com/fake"
+    const newCarePlan = new CarePlan(req.body)
+    await newCarePlan.save()
+
+    res.status(201).json({ success: true, data: newCarePlan })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error creating Care Plan',
+      error,
+    })
+  }
+}
+
+export const updateCarePlan = async (req: Request, res: Response) => {
+  const { error } = updateCarePlanSchema.validate(req.body)
+  if (error) {
+    return res
+      .status(400)
+      .json({ success: false, message: error.details[0].message })
+  }
+
+  try {
+    const planId = req.params.id
+
+    // Check if the plan exists
+    const planExists = await CarePlan.findById(planId)
+    if (!planExists) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Care plan does not exist' })
+    }
+
+    // Handle file upload if there's any
+    let filename: string | undefined = req.file?.filename
+    if (req.file) {
+      if (!filename) {
+        return res.status(400).json({
+          success: false,
+          message: 'Error uploading document',
+          error: 'Reupload document file',
+        })
+      }
+    }
+
+    const documentUrl = filename
+      ? `http://localhost:9091/documents/data/${filename}`
+      : null
+
+    const reqData = req.body
+    if (documentUrl) {
+      reqData.documentUrl = documentUrl
+    }
+
+    const updatedPlan = await CarePlan.findByIdAndUpdate(
+      planId,
+      reqData,
+      { new: true }
+    )
+
+    if (!updatedPlan) {
+      // If the plan doesn't exist, create a new one
+      const newPlan = new CarePlan({
+        _id: planId,
+        ...reqData,
+      })
+      await newPlan.save()
+      return res.status(200).json({ success: true, data: newPlan })
+    }
+
+    res.status(200).json({ success: true, data: updatedPlan })
+  } catch (error) {
+    console.log('error: ', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error updating Care Plan',
+      error,
+    })
+  }
+}
+
+// Delete CarePlan
+export const deleteCarePlan = async (req: Request, res: Response) => {
+  try {
+    const carePlanId = req.params.id
+    const deletedCarePlan = await CarePlan.findByIdAndDelete(carePlanId)
+
+    if (!deletedCarePlan) {
+      return res.status(404).json({ success: false, message: 'Care plan not found' })
+    }
+
+    res.status(200).json({ success: true, message: 'Care plan deleted successfully' })
+  } catch (error) {
+    console.log('error: ', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting Care Plan',
       error,
     })
   }
