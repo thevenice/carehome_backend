@@ -16,7 +16,7 @@ import {
   updateCaregiverSchema,
 } from '../utils/caregiverSchema'
 import DocumentModel from '../models/DocumentModel'
-import { paginate } from '../utils/helper'
+import { config, paginate } from '../utils/helper'
 import Caregiver from '../models/CaregiverModel'
 import mongoose, { Types } from 'mongoose'
 import Resident from '../models/ResidentModel'
@@ -1417,30 +1417,50 @@ export const deleteInterviewCandidate = async (req: Request, res: Response) => {
 }
 
 // Get CarePlan or All CarePlans with search functionality
+
 export const getCarePlan = async (req: Request, res: Response): Promise<Response> => {
-  const { id, search } = req.query
-  let { page, limit } = req.query
+  const { id, search } = req.query;
+  let { page, limit } = req.query;
 
   try {
     const options = {
       page: Number(page) || 1,
       limit: Number(limit) || 10,
-    }
+    };
 
     // Default to all in one page if no pagination params are provided
     if (!page || !limit) {
-      options.page = 1
-      options.limit = 9999 // large number to get all in one page
+      options.page = 1;
+      options.limit = 9999; // large number to get all in one page
     }
 
-    if (id) {
-      const carePlan = await CarePlan.findById(id)
-      if (!carePlan) {
-        return res.status(404).json({ success: false, message: 'Care plan not found' })
+    const formatLink = (path: string | null | undefined, type: 'pdf' | 'image'): string | null => {
+      if (!path) return null;
+      const filename = path.split('/').pop();
+      if (type === 'pdf') {
+        return `${config.serverUrl}/care-plan-pdfs/data/${filename}`;
+      } else {
+        return `${config.serverUrl}/care-plan-images/data/${filename}`;
       }
-      return res.status(200).json({ success: true, data: carePlan })
+    };
+  
+    const formatCarePlan = (plan: any) => {
+      return {
+        ...plan.toObject(),
+        planPdfLink: formatLink(plan.planPdfLink, 'pdf'),
+        featuredImageLink: formatLink(plan.featuredImageLink, 'image'),
+        mediaLinks: plan.mediaLinks ? plan.mediaLinks.map((link: string) => formatLink(link, 'image')) : [],
+      };
+    };
+
+    if (id) {
+      const carePlan = await CarePlan.findById(id);
+      if (!carePlan) {
+        return res.status(404).json({ success: false, message: 'Care plan not found' });
+      }
+      return res.status(200).json({ success: true, data: formatCarePlan(carePlan) });
     } else {
-      let query: any = {}
+      let query: any = {};
 
       if (search) {
         query = {
@@ -1450,7 +1470,7 @@ export const getCarePlan = async (req: Request, res: Response): Promise<Response
             { level: { $regex: search, $options: 'i' } },
             { specializedCare: { $regex: search, $options: 'i' } },
           ],
-        }
+        };
       }
 
       const result = await paginate(
@@ -1458,26 +1478,28 @@ export const getCarePlan = async (req: Request, res: Response): Promise<Response
         query,
         options.page,
         options.limit
-      )
+      );
+
+      const formattedDocs = result.docs.map(formatCarePlan);
 
       return res.status(200).json({
         success: true,
-        data: result.docs,
+        data: formattedDocs,
         totalPages: result.totalPages,
         currentPage: result.currentPage,
         total: result.total,
         limit: result.limit,
-      })
+      });
     }
   } catch (error) {
-    console.error('Error retrieving Care Plans', error)
+    console.error('Error retrieving Care Plans', error);
     return res.status(500).json({
       success: false,
       message: 'Error retrieving Care Plans',
       error,
-    })
+    });
   }
-}
+};
 
 // Create CarePlan
 export const createCarePlan = async (req: Request, res: Response) => {
@@ -1538,6 +1560,7 @@ export const createCarePlan = async (req: Request, res: Response) => {
     });
   }
 };
+
 export const updateCarePlan = async (req: Request, res: Response) => {
   const { error } = updateCarePlanSchema.validate(req.body);
   if (error) {

@@ -55,6 +55,28 @@ app.use(
   ),
 )
 
+// Static route for care plan PDFs
+app.use(
+  '/care-plan-pdfs/data',
+  express.static(
+    path.join(
+      '/Users/prakashpawar/Documents/prakash/carehome/carehome_backend',
+      '/uploads/pdfs'
+    )
+  )
+);
+
+// Static route for care plan images (both featured and media images)
+app.use(
+  '/care-plan-images/data',
+  express.static(
+    path.join(
+      '/Users/prakashpawar/Documents/prakash/carehome/carehome_backend',
+      '/uploads/images'
+    )
+  )
+);
+
 app.use(express.json())
 
 app.get('/api', async (req: any, res: any) => {

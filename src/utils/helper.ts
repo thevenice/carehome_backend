@@ -1,6 +1,10 @@
 import nodemailer from 'nodemailer'
 import smtpTransport from 'nodemailer/lib/smtp-transport'
 
+
+export const config = {
+  serverUrl: 'http://localhost:9091'
+};
 const transporter = nodemailer.createTransport(
   new smtpTransport({
     host: process.env.MAIL_HOST,
