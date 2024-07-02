@@ -4,6 +4,7 @@ import authenticateJWT from '../middlewares/auth'
 import {
   careHomeLogo,
   profilePicUpload,
+  uploadPlanMediaFiles,
   usersDocuments,
 } from '../middlewares/profilePictureUpload'
 import bodyParserFormData from '../middlewares/bodyParserFormData'
@@ -119,14 +120,24 @@ router.get(
 
 router.post(
   '/plans',
-  [usersDocuments.single('file'), bodyParserFormData],
+  uploadPlanMediaFiles.fields([
+    { name: 'planPdf', maxCount: 1 },
+    { name: 'featuredImage', maxCount: 1 },
+    { name: 'mediaImages', maxCount: 5 }
+  ]),
   adminController.createCarePlan
 )
 
 router.put(
-  '/plans/:Id',
-  [usersDocuments.single('file'), bodyParserFormData],
+  '/plans/:id',
+  uploadPlanMediaFiles.fields([
+    { name: 'data', maxCount: 1 },
+    { name: 'planPdf', maxCount: 1 },
+    { name: 'featuredImage', maxCount: 1 },
+    { name: 'mediaImages', maxCount: 5 }
+  ]),
+  bodyParserFormData,
   adminController.updateCarePlan
-)
+);
 
 export default router

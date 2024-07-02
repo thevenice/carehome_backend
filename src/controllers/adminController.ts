@@ -1481,94 +1481,118 @@ export const getCarePlan = async (req: Request, res: Response): Promise<Response
 
 // Create CarePlan
 export const createCarePlan = async (req: Request, res: Response) => {
-  const { error } = createCarePlanSchema.validate(req.body)
+  console.log('req.body:', req.body);
+  console.log('req.body.data:', req.body.data);
+  console.log('typeof req.body.data:', typeof req.body.data);
+
+  let dataToValidate;
+  
+  try {
+    if (typeof req.body.data === 'string') {
+      dataToValidate = JSON.parse(req.body.data);
+    } else if (typeof req.body.data === 'object') {
+      dataToValidate = req.body.data;
+    } else {
+      return res.status(400).json({ success: false, message: "Invalid data format" });
+    }
+  } catch (err) {
+    return res.status(400).json({ success: false, message: "Error parsing data" });
+  }
+
+  const { error } = createCarePlanSchema.validate(dataToValidate);
   if (error) {
-    return res.status(400).json({ success: false, message: error.details[0].message })
+    return res.status(400).json({ success: false, message: error.details[0].message });
   }
 
   try {
-    const dataToSave:any = req.body
-    dataToSave.planPdfLink = "http://faxxx.com/fake"
-    dataToSave.featuredImageLink = "http://faxxx.com/fake"
-    const newCarePlan = new CarePlan(req.body)
-    await newCarePlan.save()
+    const dataToSave: any = dataToValidate;
+    
+    if (req.files) {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      
+      if (files['planPdf']) {
+        dataToSave.planPdfLink = `/uploads/pdfs/${files['planPdf'][0].filename}`;
+      }
+      
+      if (files['featuredImage']) {
+        dataToSave.featuredImageLink = `/uploads/images/${files['featuredImage'][0].filename}`;
+      }
+      
+      if (files['mediaImages']) {
+        dataToSave.mediaLinks = files['mediaImages'].map(file => `/uploads/images/${file.filename}`);
+      }
+      console.log(dataToSave.planPdfLink)
+      console.log(dataToSave.featuredImageLink)
+    }
 
-    res.status(201).json({ success: true, data: newCarePlan })
-  } catch (error) {
+    const newCarePlan = new CarePlan(dataToSave);
+    await newCarePlan.save();
+
+    res.status(201).json({ success: true, data: newCarePlan });
+  } catch (error:any) {
+    console.error('Error creating Care Plan:', error);
     res.status(500).json({
       success: false,
       message: 'Error creating Care Plan',
-      error,
-    })
+      error: error.message,
+    });
   }
-}
-
+};
 export const updateCarePlan = async (req: Request, res: Response) => {
-  const { error } = updateCarePlanSchema.validate(req.body)
+  const { error } = updateCarePlanSchema.validate(req.body);
   if (error) {
-    return res
-      .status(400)
-      .json({ success: false, message: error.details[0].message })
+    return res.status(400).json({ success: false, message: error.details[0].message });
   }
 
   try {
-    const planId = req.params.id
+    const planId = req.params.id;
 
     // Check if the plan exists
-    const planExists = await CarePlan.findById(planId)
-    if (!planExists) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'Care plan does not exist' })
+    const existingPlan = await CarePlan.findById(planId);
+    if (!existingPlan) {
+      return res.status(404).json({ success: false, message: 'Care plan does not exist' });
     }
 
-    // Handle file upload if there's any
-    let filename: string | undefined = req.file?.filename
-    if (req.file) {
-      if (!filename) {
-        return res.status(400).json({
-          success: false,
-          message: 'Error uploading document',
-          error: 'Reupload document file',
-        })
+    const updateData: any = req.body;
+
+    // Handle file uploads
+    if (req.files) {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+      if (files['planPdf']) {
+        updateData.planPdfLink = `/uploads/pdfs/${files['planPdf'][0].filename}`;
+      }
+
+      if (files['featuredImage']) {
+        updateData.featuredImageLink = `/uploads/images/${files['featuredImage'][0].filename}`;
+      }
+
+      if (files['mediaImages']) {
+        // Append new media links to existing ones
+        const newMediaLinks = files['mediaImages'].map(file => `/uploads/images/${file.filename}`);
+        updateData.mediaLinks = [...(existingPlan.mediaLinks || []), ...newMediaLinks];
       }
     }
 
-    const documentUrl = filename
-      ? `http://localhost:9091/documents/data/${filename}`
-      : null
-
-    const reqData = req.body
-    if (documentUrl) {
-      reqData.documentUrl = documentUrl
-    }
-
-    const updatedPlan = await CarePlan.findByIdAndUpdate(
-      planId,
-      reqData,
-      { new: true }
-    )
+    // Update the care plan
+    const updatedPlan = await CarePlan.findByIdAndUpdate(planId, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!updatedPlan) {
-      // If the plan doesn't exist, create a new one
-      const newPlan = new CarePlan({
-        _id: planId,
-        ...reqData,
-      })
-      await newPlan.save()
-      return res.status(200).json({ success: true, data: newPlan })
+      return res.status(404).json({ success: false, message: 'Care plan not found' });
     }
 
-    res.status(200).json({ success: true, data: updatedPlan })
+    res.status(200).json({ success: true, data: updatedPlan });
   } catch (error) {
-    console.log('error: ', error)
     res.status(500).json({
       success: false,
       message: 'Error updating Care Plan',
       error,
-    })
+    });
   }
-}
+};
 
 // Delete CarePlan
 export const deleteCarePlan = async (req: Request, res: Response) => {

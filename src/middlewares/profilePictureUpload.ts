@@ -138,3 +138,44 @@ export const usersDocuments = multer({
 //     },
 //   }),
 // });
+
+
+const planMediaStorage = multer.diskStorage({
+  destination: function (req: any, file: any, cb: any) {
+    let uploadPath = 'uploads/';
+    if (file.fieldname === 'planPdf') {
+      uploadPath += 'pdfs/';
+    } else if (file.fieldname === 'featuredImage' || file.fieldname === 'mediaImages') {
+      uploadPath += 'images/';
+    }
+    cb(null, uploadPath);
+  },
+  filename: function (req: any, file: any, cb: any) {
+    const uniqueFilename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
+    cb(null, uniqueFilename);
+  },
+});
+
+const fileFilter = (req: any, file: any, cb: any) => {
+  if (file.fieldname === 'planPdf') {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only PDF files are allowed for plan PDF.'), false);
+    }
+  } else if (file.fieldname === 'featuredImage' || file.fieldname === 'mediaImages') {
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG and PNG files are allowed for images.'), false);
+    }
+  } else {
+    cb(new Error('Unexpected field'), false);
+  }
+};
+
+export const uploadPlanMediaFiles = multer({
+  storage: planMediaStorage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
