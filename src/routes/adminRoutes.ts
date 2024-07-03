@@ -140,4 +140,15 @@ router.put(
   adminController.updateCarePlan
 );
 
+router.get('/timesheets', authenticateJWT(['ADMINISTRATOR']),  adminController.getTimesheets);
+router.post('/timesheets', authenticateJWT(['ADMINISTRATOR']),  adminController.createTimesheet);
+router.put('/timesheets/:id', authenticateJWT(['ADMINISTRATOR']),  adminController.updateTimesheet);
+router.delete('/timesheets/:id', authenticateJWT(['ADMINISTRATOR']),  adminController.deleteTimesheet);
+
+
+router.get('/attendance', authenticateJWT(['ADMINISTRATOR']), adminController. getAttendance);
+router.post('/attendance', authenticateJWT(['ADMINISTRATOR']), adminController. createAttendance);
+router.put('/attendance/:id', authenticateJWT(['ADMINISTRATOR']), adminController. updateAttendance);
+router.delete('/attendance/:id', authenticateJWT(['ADMINISTRATOR']), adminController. deleteAttendance);
+
 export default router

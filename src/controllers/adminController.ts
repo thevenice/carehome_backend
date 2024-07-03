@@ -29,6 +29,8 @@ import InterviewCandidateModel from '../models/InterviewCandidateModel'
 import InterviewCandidate from '../models/InterviewCandidateModel'
 import CarePlan from '../models/CarePlanModel'
 import { createCarePlanSchema, updateCarePlanSchema } from '../utils/CarePlanSchema'
+import Timesheet from '../models/TimesheetModel'
+import Attendance from '../models/AttendanceSheet'
 
 export const createDummyAdmin = async (req: Request, res: Response) => {
   try {
@@ -1637,3 +1639,352 @@ export const deleteCarePlan = async (req: Request, res: Response) => {
     })
   }
 }
+
+// GET /api/timesheets
+export const getTimesheets = async (req: Request, res: Response) => {
+  const {
+    timesheetId,
+    page = 1,
+    limit = 10,
+    search_field,
+    search_text,
+  } = req.query;
+  const _search_field = search_field ? search_field.toString() : '';
+  const searchParam = !search_text
+    ? ''
+    : typeof search_text === 'string'
+    ? search_text
+    : search_text?.toString();
+
+  try {
+    const options = {
+      page: Number(page) || 1,
+      limit: Number(limit) || 10,
+    };
+
+    if (!page || !limit) {
+      options.page = 1;
+      options.limit = 9999; // large number to get all in one page
+    }
+
+    if (timesheetId) {
+      const timesheet = await Timesheet.findById(timesheetId).populate('user', 'email name');
+
+      if (!timesheet) {
+        return res.status(404).json({ success: false, message: 'Timesheet not found' });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: timesheet,
+      });
+    } else {
+      let searchQuery: any = {};
+
+      if (_search_field && search_text) {
+        switch (_search_field.toLowerCase()) {
+          case 'date':
+            searchQuery[_search_field] = { $regex: new RegExp(searchParam, 'i') };
+            break;
+          case 'status':
+            searchQuery[_search_field] = { $regex: new RegExp(searchParam, 'i') };
+            break;
+          case 'user.name':
+          case 'user.email':
+            break; // Handled separately in the aggregation pipeline
+          default:
+            return res.status(400).json({ success: false, message: 'Invalid search field' });
+        }
+      }
+
+      const aggregateQuery: any[] = [
+        { $match: searchQuery },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'user',
+            foreignField: '_id',
+            as: 'user',
+          },
+        },
+      ];
+
+      if (_search_field && search_text) {
+        switch (_search_field.toLowerCase()) {
+          case 'user.name':
+            aggregateQuery.push({
+              $match: { 'user.name': { $regex: new RegExp(searchParam, 'i') } },
+            });
+            break;
+          case 'user.email':
+            aggregateQuery.push({
+              $match: { 'user.email': { $regex: new RegExp(searchParam, 'i') } },
+            });
+            break;
+        }
+      }
+
+      aggregateQuery.push(
+        { $skip: (options.page - 1) * options.limit },
+        { $limit: options.limit }
+      );
+
+      const timesheets = await Timesheet.aggregate(aggregateQuery);
+
+      const timesheetsWithUserData = timesheets.map((timesheet: any) => {
+        timesheet.user = timesheet.user[0];
+        return timesheet;
+      });
+
+      const totalTimesheets = await Timesheet.countDocuments(searchQuery);
+      const totalPages = Math.ceil(totalTimesheets / options.limit);
+
+      return res.status(200).json({
+        success: true,
+        data: timesheetsWithUserData,
+        totalPages,
+        currentPage: options.page,
+        total: totalTimesheets,
+        limit: options.limit,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error retrieving timesheets', error });
+  }
+};
+
+// POST /api/timesheets
+export const createTimesheet = async (req: any, res: Response) => {
+  const { date, shiftStart, shiftEnd, breakTime, totalHours, status, notes } = req.body;
+  const user = req.user;
+
+  try {
+    const newTimesheet = new Timesheet({
+      user: user.id,
+      date,
+      shiftStart,
+      shiftEnd,
+      breakTime,
+      totalHours,
+      status,
+      notes,
+    });
+
+    await newTimesheet.save();
+    const savedTimesheet = await newTimesheet.populate('user', 'email name');
+
+    res.status(201).json({ success: true, data: savedTimesheet });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error creating timesheet', error });
+  }
+};
+
+// PUT /api/timesheets/:id
+export const updateTimesheet = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const updateData = req.body;
+
+  try {
+    const timesheet = await Timesheet.findByIdAndUpdate(id, updateData, { new: true })
+      .populate('user', 'email name');
+
+    if (!timesheet) {
+      return res.status(404).json({ success: false, message: 'Timesheet not found' });
+    }
+
+    res.status(200).json({ success: true, data: timesheet });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error updating timesheet', error });
+  }
+};
+
+// DELETE /api/timesheets/:id
+export const deleteTimesheet = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const timesheet = await Timesheet.findByIdAndDelete(id);
+
+    if (!timesheet) {
+      return res.status(404).json({ success: false, message: 'Timesheet not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'Timesheet deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error deleting timesheet', error });
+  }
+};
+
+
+// GET /api/attendance
+export const getAttendance = async (req: Request, res: Response) => {
+  const {
+    attendanceId,
+    page = 1,
+    limit = 10,
+    search_field,
+    search_text,
+  } = req.query;
+  const _search_field = search_field ? search_field.toString() : '';
+  const searchParam = !search_text
+    ? ''
+    : typeof search_text === 'string'
+    ? search_text
+    : search_text?.toString();
+
+  try {
+    const options = {
+      page: Number(page) || 1,
+      limit: Number(limit) || 10,
+    };
+
+    if (!page || !limit) {
+      options.page = 1;
+      options.limit = 9999; // large number to get all in one page
+    }
+
+    if (attendanceId) {
+      const attendance = await Attendance.findById(attendanceId).populate('user', 'email name');
+
+      if (!attendance) {
+        return res.status(404).json({ success: false, message: 'Attendance record not found' });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: attendance,
+      });
+    } else {
+      let searchQuery: any = {};
+
+      if (_search_field && search_text) {
+        switch (_search_field.toLowerCase()) {
+          case 'date':
+            searchQuery[_search_field] = { $regex: new RegExp(searchParam, 'i') };
+            break;
+          case 'status':
+            searchQuery[_search_field] = { $regex: new RegExp(searchParam, 'i') };
+            break;
+          case 'user.name':
+          case 'user.email':
+            break; // Handled separately in the aggregation pipeline
+          default:
+            return res.status(400).json({ success: false, message: 'Invalid search field' });
+        }
+      }
+
+      const aggregateQuery: any[] = [
+        { $match: searchQuery },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'user',
+            foreignField: '_id',
+            as: 'user',
+          },
+        },
+      ];
+
+      if (_search_field && search_text) {
+        switch (_search_field.toLowerCase()) {
+          case 'user.name':
+            aggregateQuery.push({
+              $match: { 'user.name': { $regex: new RegExp(searchParam, 'i') } },
+            });
+            break;
+          case 'user.email':
+            aggregateQuery.push({
+              $match: { 'user.email': { $regex: new RegExp(searchParam, 'i') } },
+            });
+            break;
+        }
+      }
+
+      aggregateQuery.push(
+        { $skip: (options.page - 1) * options.limit },
+        { $limit: options.limit }
+      );
+
+      const attendanceRecords = await Attendance.aggregate(aggregateQuery);
+
+      const attendanceWithUserData = attendanceRecords.map((record: any) => {
+        record.user = record.user[0];
+        return record;
+      });
+
+      const totalRecords = await Attendance.countDocuments(searchQuery);
+      const totalPages = Math.ceil(totalRecords / options.limit);
+
+      return res.status(200).json({
+        success: true,
+        data: attendanceWithUserData,
+        totalPages,
+        currentPage: options.page,
+        total: totalRecords,
+        limit: options.limit,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error retrieving attendance records', error });
+  }
+};
+
+// POST /api/attendance
+export const createAttendance = async (req: any, res: Response) => {
+  const { date, checkIn, checkOut, status, notes } = req.body;
+  const user = req.user;
+
+  try {
+    const newAttendance = new Attendance({
+      user: user.id,
+      date,
+      checkIn,
+      checkOut,
+      status,
+      notes,
+    });
+
+    await newAttendance.save();
+    const savedAttendance = await newAttendance.populate('user', 'email name');
+
+    res.status(201).json({ success: true, data: savedAttendance });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error creating attendance record', error });
+  }
+};
+
+// PUT /api/attendance/:id
+export const updateAttendance = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const updateData = req.body;
+
+  try {
+    const attendance = await Attendance.findByIdAndUpdate(id, updateData, { new: true })
+      .populate('user', 'email name');
+
+    if (!attendance) {
+      return res.status(404).json({ success: false, message: 'Attendance record not found' });
+    }
+
+    res.status(200).json({ success: true, data: attendance });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error updating attendance record', error });
+  }
+};
+
+// DELETE /api/attendance/:id
+export const deleteAttendance = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const attendance = await Attendance.findByIdAndDelete(id);
+
+    if (!attendance) {
+      return res.status(404).json({ success: false, message: 'Attendance record not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'Attendance record deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error deleting attendance record', error });
+  }
+};
