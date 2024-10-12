@@ -143,6 +143,7 @@ router.put(
 router.get('/timesheets', authenticateJWT(['ADMINISTRATOR']),  adminController.getTimesheets);
 router.post('/timesheets', authenticateJWT(['ADMINISTRATOR']),  adminController.createTimesheet);
 router.put('/timesheets/:id', authenticateJWT(['ADMINISTRATOR']),  adminController.updateTimesheet);
+router.put('/update-timesheet-status/:id', authenticateJWT(['ADMINISTRATOR']),  adminController.updateTimesheetStatus);
 router.delete('/timesheets/:id', authenticateJWT(['ADMINISTRATOR']),  adminController.deleteTimesheet);
 
 

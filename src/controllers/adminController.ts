@@ -31,6 +31,7 @@ import CarePlan from '../models/CarePlanModel'
 import { createCarePlanSchema, updateCarePlanSchema } from '../utils/CarePlanSchema'
 import Timesheet from '../models/TimesheetModel'
 import Attendance from '../models/AttendanceSheet'
+import { createAttendanceSchema, updateAttendanceSchema } from '../utils/attendanceSheet'
 
 export const createDummyAdmin = async (req: Request, res: Response) => {
   try {
@@ -229,77 +230,62 @@ export const updateUser = async (req: Request, res: Response) => {
 // createOrUpdateCompanyInfo APIs
 export const createOrUpdateCompanyInfo = async (
   req: Request,
-  res: Response,
-): Promise<Response> => {
-  const { error } = companyInfoSchema.validate(req.body)
-  if (error) {
-    return res
-      .status(400)
-      .json({ success: false, message: error.details[0].message })
-  }
-
+  res: Response
+): Promise<any> => {
   try {
-    const existingCompanyInfo = await CompanyInfo.findOne()
+    // Parse JSON strings in the request body
+    ['contactInfo', 'location', 'servicesOffered', 'facilitiesAmenities'].forEach(field => {
+      if (typeof req.body[field] === 'string') {
+        try {
+          req.body[field] = JSON.parse(req.body[field]);
+        } catch (error) {
+          console.error(`Error parsing ${field}:`, error);
+        }
+      }
+    });
+
+    // Handle images array
+    if (typeof req.body.images === 'string') {
+      try {
+        req.body.images = JSON.parse(req.body.images);
+      } catch (error) {
+        console.error('Error parsing images:', error);
+        req.body.images = [];
+      }
+    }
+
+    // Validate the request body
+    const { error } = companyInfoSchema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+
+    const existingCompanyInfo: any = await CompanyInfo.findOne();
 
     if (existingCompanyInfo) {
-      // Update only the fields that are present in the request body
-      if (req.body.name) existingCompanyInfo.name = req.body.name
-      if (req.body.contactInfo) {
-        const contactInfoJson = JSON.parse(req.body.contactInfo)
-        existingCompanyInfo.contactInfo = contactInfoJson
-      }
-      if (req.body.servicesOffered) {
-        const servicesOfferedJson = JSON.parse(req.body.servicesOffered)
-        existingCompanyInfo.servicesOffered = servicesOfferedJson
-      }
-      if (req.body.facilitiesAmenities) {
-        const facilitiesAmenitiesJson = JSON.parse(req.body.facilitiesAmenities)
-        existingCompanyInfo.facilitiesAmenities = facilitiesAmenitiesJson
-      }
+      // Update fields that are present in the request body
+      Object.keys(req.body).forEach(key => {
+        if (req.body[key] !== undefined && key !== 'file') { // Skip updating req.file
+          existingCompanyInfo[key] = req.body[key];
+        }
+      });
 
-      if (req.body.location) existingCompanyInfo.location = req.body.location
-      if (req.body.images) existingCompanyInfo.images = req.body.images
-      if (req.body.aboutUs) existingCompanyInfo.aboutUs = req.body.aboutUs
-      if (req.body.testimonials)
-        existingCompanyInfo.testimonials = req.body.testimonials
-      if (req.body.linkedin) existingCompanyInfo.linkedin = req.body.linkedin
-      if (req.body.googleMap) existingCompanyInfo.googleMap = req.body.googleMap
-      if (req.body.xCom) existingCompanyInfo.xCom = req.body.xCom
-      if (req.body.instagram) existingCompanyInfo.instagram = req.body.instagram
-      if (req.body.facebook) existingCompanyInfo.facebook = req.body.facebook
-      if (req.body.whatsapp) existingCompanyInfo.whatsapp = req.body.whatsapp
-      if (req.body.telegram) existingCompanyInfo.telegram = req.body.telegram
-      if (req.file) existingCompanyInfo.logo = req.file.filename //logo upload through multer
-
-      await existingCompanyInfo.save()
-      return res.status(200).json({ success: true, data: existingCompanyInfo })
-    } else {
-      const dataJson = req.body
-      if (dataJson.contactInfo) {
-        const contactInfoData = JSON.parse(dataJson.contactInfo)
-        dataJson.contactInfo = contactInfoData
+      // Handle logo update
+      if (req.file && typeof(req.file) === 'object') {
+        existingCompanyInfo.logo = req.file.filename;
       }
-      if (dataJson.servicesOffered) {
-        const servicesOfferedData = JSON.parse(dataJson.servicesOffered)
-        dataJson.servicesOffered = servicesOfferedData
-      }
-      if (dataJson.facilitiesAmenities) {
-        const facilitiesAmenitiesData = JSON.parse(dataJson.facilitiesAmenities)
-        dataJson.facilitiesAmenities = facilitiesAmenitiesData
-      }
-      const newCompanyInfo = new CompanyInfo(dataJson)
-
-      if (req.file) newCompanyInfo.logo = req.file.path //logo upload through multer
-
-      await newCompanyInfo.save()
-      return res.status(201).json({ success: true, data: newCompanyInfo })
+      await existingCompanyInfo.save();
+      return res.status(200).json({ success: true, data: existingCompanyInfo });
     }
-  } catch (error) {
+  } catch (error:any) {
+    console.error("Error in createOrUpdateCompanyInfo:", error);
     return res
       .status(500)
-      .json({ success: false, message: 'Error saving company info', error })
+      .json({ success: false, message: 'Error saving company info', error: error.message });
   }
-}
+};
 
 // getCompanyInfo APIs
 export const getCompanyInfo = async (
@@ -308,6 +294,7 @@ export const getCompanyInfo = async (
 ): Promise<Response> => {
   try {
     const companyInfo = await CompanyInfo.findOne()
+    console.log("companyInfo",companyInfo)
     if (!companyInfo) {
       return res
         .status(404)
@@ -315,9 +302,9 @@ export const getCompanyInfo = async (
     }
 
     // Get the path to the logo file
-    const logoPath = companyInfo.logo
+    const logoPath = companyInfo.logo && !companyInfo.logo.startsWith('http://')
       ? `http://localhost:9091/logo/data/${companyInfo.logo}`
-      : null
+      : companyInfo.logo // Use the existing logo URL if it starts with http://
     console.log('logoPath: ', logoPath)
 
     if (logoPath) {
@@ -1798,6 +1785,45 @@ export const updateTimesheet = async (req: Request, res: Response) => {
   }
 };
 
+export const updateTimesheetStatus = async (req: any, res: Response) => {
+  const { id } = req.params;
+  const { status, notes } = req.body;
+  const adminId = req?.user.id; 
+
+  try {
+    // Check if the user is an admin
+    const admin = await User.findById(adminId);
+    if (!admin || admin?.role !== 'ADMINISTRATOR') {
+      return res.status(403).json({ success: false, message: 'Unauthorized: Admin access required' });
+    }
+
+    // Validate the status
+    if (!['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status' });
+    }
+
+    const timesheet = await Timesheet.findById(id);
+    if (!timesheet) {
+      return res.status(404).json({ success: false, message: 'Timesheet not found' });
+    }
+
+    // Update the timesheet
+    timesheet.status = status;
+    timesheet.notes = notes || timesheet.notes;
+    timesheet.statusUpdatedBy = adminId;
+
+    await timesheet.save();
+
+    // Populate user information
+    await timesheet.populate('user', 'email name');
+    await timesheet.populate('statusUpdatedBy', 'email name');
+
+    res.status(200).json({ success: true, data: timesheet });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error updating timesheet status', error });
+  }
+};
+
 // DELETE /api/timesheets/:id
 export const deleteTimesheet = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -1931,10 +1957,13 @@ export const getAttendance = async (req: Request, res: Response) => {
 
 // POST /api/attendance
 export const createAttendance = async (req: any, res: Response) => {
+  try {
+  const { error, value } = createAttendanceSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ success: false, message: error.details[0].message });
+  }
   const { date, checkIn, checkOut, status, notes } = req.body;
   const user = req.user;
-
-  try {
     const newAttendance = new Attendance({
       user: user.id,
       date,
@@ -1955,10 +1984,13 @@ export const createAttendance = async (req: any, res: Response) => {
 
 // PUT /api/attendance/:id
 export const updateAttendance = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const updateData = req.body;
-
   try {
+    const { error, value } = updateAttendanceSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ success: false, message: error.details[0].message });
+    }
+    const { id } = req.params;
+    const updateData = req.body;
     const attendance = await Attendance.findByIdAndUpdate(id, updateData, { new: true })
       .populate('user', 'email name');
 

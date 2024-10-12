@@ -44,7 +44,7 @@ export const updateUserSchema = Joi.object({
 
 export const companyInfoSchema = Joi.object({
   name: Joi.string().required(),
-  contactInfo: Joi.string().required(),
+  contactInfo: Joi.object().required(),
   location: Joi.object({
     address: Joi.string().optional(),
     coordinates: Joi.object({
@@ -54,14 +54,15 @@ export const companyInfoSchema = Joi.object({
   }).optional(),
   logo: Joi.string().optional(),
   linkedin: Joi.string().optional(),
-  googleMap: Joi.string().optional(),
+  // googleMap: Joi.string().optional(),
   xCom: Joi.string().optional(),
+  googleMap: Joi.string().optional(),
   instagram: Joi.string().optional(),
   facebook: Joi.string().optional(),
   whatsapp: Joi.string().optional(),
   telegram: Joi.string().optional(),
   images: Joi.array().items(Joi.string()).optional(),
   aboutUs: Joi.string().optional(),
-  servicesOffered: Joi.string().optional(),
-  facilitiesAmenities: Joi.string().optional(),
+  servicesOffered: Joi.array().items(Joi.string()).optional(),
+  facilitiesAmenities: Joi.array().items(Joi.string()).optional(),
 })

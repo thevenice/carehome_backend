@@ -7,6 +7,7 @@ export interface ITimesheet extends Document {
   shiftEnd: Date;
   breakTime: number; // in minutes
   totalHours: number;
+  statusUpdatedBy: mongoose.Types.ObjectId;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   notes: string;
   createdAt: Date;
@@ -21,6 +22,7 @@ const timesheetSchema = new Schema(
     shiftEnd: { type: Date, required: true },
     breakTime: { type: Number, required: true, default: 0 },
     totalHours: { type: Number, required: true },
+    statusUpdatedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     status: {
       type: String,
       enum: ['PENDING', 'APPROVED', 'REJECTED'],

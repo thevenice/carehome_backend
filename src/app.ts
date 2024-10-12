@@ -14,7 +14,7 @@ export const app: Application = express()
 app.use(express.json({ limit: '10kb' }))
 app.use(express.urlencoded({ extended: true }))
 const port = process.env.PORT || 9000
-const whitelist: any[] = ['http://localhost:5173']
+const whitelist: any[] = ['http://localhost:5173', 'http://localhost:5174']
 const corsOptions = {
   credentials: true,
   origin: function (origin: any, callback: any) {
