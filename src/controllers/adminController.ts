@@ -44,7 +44,7 @@ export const createDummyAdmin = async (req: Request, res: Response) => {
       return res.status(200).json({ message: 'Admin already exists' })
     }
 
-    // Create a new admin user
+    // Create a new admin user for first time and then comment this api
     const adminUser: IUser = new User({
       email: adminEmail,
       password: 'ADMIN@password123!', // Remember to use a strong password in production
